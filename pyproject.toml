@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "continuum-idr"
+version = "0.1.0"
+description = "GNSS/IMU intelligent dead-reckoning SDK and reproducible IO-VNBD prototype"
+readme = "PROJECT_DOCUMENTATION.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.23",
+  "pandas>=1.5",
+  "scikit-learn>=1.1",
+  "joblib>=1.2",
+  "fastapi>=0.95",
+  "uvicorn>=0.22",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+idr = "continuum_idr.cli:main"
+idr-studio = "continuum_idr.studio:main"
+
+[tool.setuptools.packages.find]
+include = ["continuum_idr*"]
+
+[tool.setuptools.package-data]
+continuum_idr = ["studio_static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

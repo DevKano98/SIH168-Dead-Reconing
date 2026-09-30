@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Continuum Studio — Intelligent Dead Reckoning</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="mark">C</span>
+      <div>
+        <strong>Continuum Studio</strong>
+        <span class="subtitle">AI/ML-Assisted Intelligent Dead Reckoning SDK</span>
+      </div>
+    </div>
+    <div class="header-badges">
+      <a href="/mobile" target="_blank" class="badge" style="text-decoration: none; cursor: pointer; background: rgba(0, 210, 255, 0.2); border: 1px solid #00d2ff; color: #00d2ff; font-weight: bold;">📱 Mobile Phone View ↗</a>
+      <span class="badge" id="execution">Loading replay…</span>
+      <span class="badge badge-accent" id="dataset-badge">IO-VNBD Held-Out Test</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">CONTINUOUS VEHICLE NAVIGATION DURING GNSS OUTAGES</p>
+        <h1>Autonomous dead reckoning when satellites disappear.</h1>
+        <p class="description">
+          Demonstrating causal sensor fusion combining smartphone IMU with a learned forward motion model
+          during a simulated tunnel blackout. Evaluated on strictly held-out IO-VNBD reference data.
+        </p>
+      </div>
+      <div class="experiment-card">
+        <div class="exp-row"><span>Experiment</span><strong id="experiment">—</strong></div>
+        <div class="exp-row"><span>Model</span><strong id="model">—</strong></div>
+        <div class="exp-row"><span>Held-out Run</span><strong id="run-id">—</strong></div>
+        <div class="exp-row"><span>Outage Profile</span><strong id="outage-id">—</strong></div>
+      </div>
+    </section>
+
+    <!-- Outage / Recovery Event Banner -->
+    <div class="event-banner" id="event-banner">
+      <span class="banner-icon" id="banner-icon">●</span>
+      <span class="banner-text" id="banner-text">GNSS AIDED NAVIGATION ACTIVE</span>
+    </div>
+
+    <section class="workspace">
+      <div class="map-card">
+        <canvas id="trajectory"></canvas>
+        <div class="legend">
+          <span class="legend-item blue"><i class="swatch"></i> Continuum IDR (ML-EKF)</span>
+          <span class="legend-item gray"><i class="swatch"></i> Ground Truth Reference</span>
+          <span class="legend-item yellow"><i class="swatch"></i> Baseline 1: Last Speed + Gyro</span>
+          <span class="legend-item red"><i class="swatch"></i> Baseline 0: Frozen</span>
+          <span class="legend-item orange"><i class="swatch"></i> GNSS Withheld Outage</span>
+        </div>
+        <div class="watermark">STRICT CAUSAL ISOLATION • REFERENCE WITHHELD FROM SDK</div>
+      </div>
+
+      <aside class="telemetry">
+        <div class="mode-card">
+          <span class="label">ESTIMATOR TRACKING MODE</span>
+          <div class="mode-value" id="mode">—</div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span class="label">Estimated Speed</span>
+            <div class="stat-num"><strong id="speed">—</strong> <small>m/s</small></div>
+            <span class="subtext" id="speed-kmh">— km/h</span>
+          </article>
+
+          <article class="stat-card">
+            <span class="label">Measured Error</span>
+            <div class="stat-num error-text"><strong id="error">—</strong> <small>m</small></div>
+            <span class="subtext">vs withheld reference</span>
+          </article>
+
+          <article class="stat-card">
+            <span class="label">95% Uncertainty</span>
+            <div class="stat-num"><strong id="uncertainty">—</strong> <small>m</small></div>
+            <span class="subtext">covariance 2D radius</span>
+          </article>
+
+          <article class="stat-card">
+            <span class="label">GNSS Input</span>
+            <div class="stat-num" id="gnss">—</div>
+            <span class="subtext" id="decision">—</span>
+          </article>
+        </div>
+
+        <div class="outage-card">
+          <div class="outage-header">
+            <span class="label">OUTAGE PROGRESS</span>
+            <strong id="outage-distance">—</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="outage-bar"></div>
+          </div>
+          <div class="outage-footer">
+            <span id="outage-status">Waiting for tunnel entry…</span>
+            <span id="outage-timer">0.0 s</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="controls-bar">
+      <div class="button-group">
+        <button id="play" class="btn btn-primary">▶ Play</button>
+        <button id="outage" class="btn btn-warning">⚡ Kill GPS (Enter Tunnel)</button>
+        <button id="restore" class="btn btn-success">✓ Restore GPS (Recovery)</button>
+        <button id="reset" class="btn btn-secondary">↺ Restart</button>
+      </div>
+
+      <div class="timeline-controls">
+        <label for="rate">Speed:</label>
+        <select id="rate">
+          <option value="1">1×</option>
+          <option value="2" selected>2×</option>
+          <option value="5">5×</option>
+        </select>
+        <input id="seek" type="range" min="0" value="0" step="1">
+        <time id="clock">00:00.0</time>
+      </div>
+    </section>
+
+    <!-- Outage Outcome Comparison -->
+    <section class="results-section">
+      <div class="section-header">
+        <h2>Simulated Outage Performance Comparison</h2>
+        <span class="badge" id="target-badge">Screening Evaluation</span>
+      </div>
+
+      <div class="result-grid">
+        <article class="result-card highlight">
+          <span class="label">Continuum IDR Error</span>
+          <div class="result-num"><strong id="endpoint">—</strong> <small>m</small></div>
+          <span class="result-drift" id="drift">—% drift</span>
+        </article>
+
+        <article class="result-card">
+          <span class="label">Baseline 1 (Last Speed + Gyro)</span>
+          <div class="result-num"><strong id="b1-endpoint">—</strong> <small>m</small></div>
+          <span class="result-drift" id="b1-drift">—% drift</span>
+        </article>
+
+        <article class="result-card">
+          <span class="label">Baseline 0 (Frozen Position)</span>
+          <div class="result-num"><strong id="b0-endpoint">—</strong> <small>m</small></div>
+          <span class="result-drift" id="b0-drift">—% drift</span>
+        </article>
+
+        <article class="result-card">
+          <span class="label">10% Benchmark Target</span>
+          <div class="result-num" id="target">—</div>
+          <span class="subtext" id="target-sub">SIH Drift Benchmark</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- Aggregate Held-Out Benchmark Table -->
+    <section class="aggregate-section">
+      <div class="section-header">
+        <h2>Aggregate Held-Out Benchmark (Complete Vtb Test Family)</h2>
+        <span class="badge">Strict Zero-Leakage Split</span>
+      </div>
+      <div class="table-container">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Outage Bucket</th>
+              <th>Sample Count</th>
+              <th>Continuum IDR Median Error</th>
+              <th>Continuum IDR P95 Error</th>
+              <th>Continuum IDR Drift</th>
+              <th>Baseline 1 Error</th>
+              <th>Baseline 0 Error</th>
+              <th>Pass Rate (&lt;10%)</th>
+            </tr>
+          </thead>
+          <tbody id="aggregate-table-body">
+            <tr><td colspan="8">Loading aggregate results…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="footnote" id="note"></p>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

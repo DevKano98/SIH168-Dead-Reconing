@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Continuum IDR — Mobile Fallback Demonstrator</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #151d2f;
+      --card-border: #23314d;
+      --primary: #00d2ff;
+      --accent: #00f2fe;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .device-container {
+      width: 100%;
+      max-width: 420px;
+      height: 860px;
+      max-height: 100vh;
+      background: #000;
+      border: 10px solid #23314d;
+      border-radius: 44px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 210, 255, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+    @media (max-width: 480px) {
+      .device-container {
+        border: none;
+        border-radius: 0;
+        height: 100vh;
+        max-width: 100%;
+      }
+    }
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 24px;
+      background: #23314d;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      z-index: 100;
+    }
+    /* Top Navigation HUD */
+    .top-bar {
+      position: absolute;
+      top: 26px;
+      left: 12px;
+      right: 12px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .nav-instruction {
+      background: rgba(21, 29, 47, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .nav-icon {
+      width: 38px;
+      height: 38px;
+      background: #1e293b;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--primary);
+    }
+    .nav-text {
+      flex: 1;
+    }
+    .nav-dist {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .nav-street {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .status-chips {
+      display: flex;
+      gap: 8px;
+    }
+    .chip {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(8px);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--card-border);
+    }
+    .chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+    .chip.danger .chip-dot {
+      background: var(--danger);
+      box-shadow: 0 0 10px var(--danger);
+      animation: pulse 1s infinite alternate;
+    }
+    .chip.warning .chip-dot {
+      background: var(--warning);
+    }
+    @keyframes pulse {
+      from { opacity: 0.4; }
+      to { opacity: 1; }
+    }
+    /* Map Canvas */
+    .map-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    #mapCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    /* Toast Banner */
+    .toast-banner {
+      position: absolute;
+      top: 150px;
+      left: 16px;
+      right: 16px;
+      background: rgba(239, 68, 68, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+      z-index: 60;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateY(-20px);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .toast-banner.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .toast-banner.success {
+      background: rgba(16, 185, 129, 0.95);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+    }
+    .toast-banner.warning {
+      background: rgba(245, 158, 11, 0.95);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+    }
+    /* Bottom Dashboard Drawer */
+    .bottom-drawer {
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      border-top-left-radius: 28px;
+      border-top-right-radius: 28px;
+      padding: 18px 20px 24px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+    }
+    .metrics-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .speed-box {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .speed-val {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #fff;
+      min-width: 50px;
+    }
+    .speed-unit {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .telemetry-col {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+    .telemetry-col strong {
+      color: var(--text);
+    }
+    /* Action Buttons */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text);
+      padding: 10px 6px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: #334155;
+      border-color: var(--primary);
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn.active-danger {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--danger);
+      color: #fca5a5;
+    }
+    .btn.active-primary {
+      background: rgba(0, 210, 255, 0.2);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .btn-icon {
+      font-size: 16px;
+    }
+    .link-desktop {
+      text-align: center;
+      font-size: 11px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="device-container">
+    <div class="notch"></div>
+
+    <!-- Top Navigation HUD -->
+    <div class="top-bar">
+      <div class="nav-instruction">
+        <div class="nav-icon" id="turnIcon">⬆</div>
+        <div class="nav-text">
+          <div class="nav-dist" id="turnDist">IN 180 M</div>
+          <div class="nav-street" id="turnStreet">Midtown Tunnel Expressway</div>
+        </div>
+      </div>
+      <div class="status-chips">
+        <div class="chip" id="gnssChip">
+          <div class="chip-dot"></div>
+          <span id="gnssLabel">GNSS 3D LOCK (3.1m)</span>
+        </div>
+        <div class="chip" id="modeChip">
+          <span id="modeLabel" style="color: var(--primary);">AIDED</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert / Toast Banner -->
+    <div class="toast-banner" id="toastBanner">
+      TUNNEL OUTAGE DETECTED — CONTINUUM IDR ACTIVE
+    </div>
+
+    <!-- Map Canvas Area -->
+    <div class="map-container">
+      <canvas id="mapCanvas"></canvas>
+    </div>
+
+    <!-- Bottom Dashboard Drawer -->
+    <div class="bottom-drawer">
+      <div class="metrics-row">
+        <div class="speed-box">
+          <div class="speed-val" id="speedDisplay">48</div>
+          <div class="speed-unit">KM/H</div>
+        </div>
+        <div class="telemetry-col">
+          <div>Heading: <strong id="headingDisplay">092° E</strong></div>
+          <div>Uncertainty: <strong id="uncertDisplay">±3.1 m</strong></div>
+          <div>Road Snap: <strong id="roadSnapDisplay">Active (Lane 1)</strong></div>
+        </div>
+      </div>
+
+      <!-- Quick Interactive Actions for Judges -->
+      <div class="controls-grid">
+        <button class="btn" id="btnTunnel" onclick="toggleTunnel()">
+          <span class="btn-icon">🚇</span>
+          <span id="tunnelBtnText">Enter Tunnel</span>
+        </button>
+        <button class="btn" id="btnStop" onclick="toggleTrafficStop()">
+          <span class="btn-icon">🚦</span>
+          <span id="stopBtnText">Traffic Stop</span>
+        </button>
+        <button class="btn" id="btnBump" onclick="triggerSpeedBreaker()">
+          <span class="btn-icon">⚠️</span>
+          <span>Speed Bump</span>
+        </button>
+        <button class="btn" id="btnPothole" onclick="triggerPothole()">
+          <span class="btn-icon">🕳️</span>
+          <span>Pothole</span>
+        </button>
+        <button class="btn" id="btnMount" onclick="triggerMountShift()">
+          <span class="btn-icon">📱</span>
+          <span>Knock Mount</span>
+        </button>
+        <button class="btn" id="btnRealReplay" onclick="loadRealReplay()">
+          <span class="btn-icon">🔄</span>
+          <span>IO-VNBD Run</span>
+        </button>
+      </div>
+
+      <a href="/" class="link-desktop">Switch to 1920×1080 Desktop Studio ↗</a>
+    </div>
+  </div>
+
+  <script src="/static/mobile.js"></script>
+</body>
+</html>

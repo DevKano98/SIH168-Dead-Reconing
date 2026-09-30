@@ -1,0 +1,146 @@
+# ==============================================================================
+# Continuum IDR — Project .gitignore
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Python & Bytecode
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+parts/
+var/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.manifest
+*.spec
+
+# ------------------------------------------------------------------------------
+# 2. Package Builds & Distribution
+# ------------------------------------------------------------------------------
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ------------------------------------------------------------------------------
+# 3. Virtual Environments
+# ------------------------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ------------------------------------------------------------------------------
+# 4. Testing, Type-Checking & Coverage
+# ------------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.pytype/
+.ruff_cache/
+
+# ------------------------------------------------------------------------------
+# 5. Raw Datasets & Large Archives (Do Not Commit Gigabytes to Git)
+# ------------------------------------------------------------------------------
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+Synchronised V abd S datasets/
+Unsynchronised V and S Dataset/
+*.parquet
+
+# ------------------------------------------------------------------------------
+# 6. Machine Learning Weights & Large Model Dumps
+# ------------------------------------------------------------------------------
+# Ignore large binary checkpoints
+*.joblib
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.bin
+
+# Preserve lightweight portable JSON models
+!models/portable/*.json
+
+# ------------------------------------------------------------------------------
+# 7. Android & Gradle Build Artifacts
+# ------------------------------------------------------------------------------
+android/.gradle/
+android/build/
+android/*/build/
+.gradle/
+local.properties
+*.apk
+*.aab
+*.dex
+captures/
+.externalNativeBuild
+.cxx/
+
+# ------------------------------------------------------------------------------
+# 8. IDEs & Editors
+# ------------------------------------------------------------------------------
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+*~
+*.bak
+
+# ------------------------------------------------------------------------------
+# 9. Operating System Artifacts
+# ------------------------------------------------------------------------------
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ------------------------------------------------------------------------------
+# 10. Logs & Temporary Scratch Files
+# ------------------------------------------------------------------------------
+*.log
+*.tmp
+.system_generated/
+codex-session-*.md

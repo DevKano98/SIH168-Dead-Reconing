@@ -1,0 +1,124 @@
+{
+  "experiment_id": "iovnbd-vtb-heldout-p0",
+  "model_id": "motion-hgbr-p0-2026-01",
+  "independent_test_runs": 11,
+  "total_outages_evaluated": 34,
+  "total_candidates_skipped": 98,
+  "overall": {
+    "median_endpoint_error_m": 354.2503344304014,
+    "p95_endpoint_error_m": 1072.3334303911251,
+    "median_drift_percent": 80.31503788393306,
+    "p95_drift_percent": 271.4141501325065,
+    "pass_rate_below_10_percent": 0.0,
+    "baseline_last_speed_median_endpoint_error_m": 334.44937662621396,
+    "baseline_last_speed_median_drift_percent": 86.04660430223356,
+    "baseline_frozen_median_endpoint_error_m": 496.8805011257116,
+    "baseline_frozen_median_drift_percent": 101.06726847167099,
+    "idr_improvement_over_last_speed_percent": -5.920464855976482,
+    "idr_improvement_over_frozen_percent": 28.705124546480153
+  },
+  "by_distance": {
+    "50m": {
+      "outage_count": 11,
+      "median_endpoint_error_m": 73.58846705431847,
+      "p95_endpoint_error_m": 268.5855348461165,
+      "median_drift_percent": 148.6486148551518,
+      "p95_drift_percent": 537.1857757385151,
+      "pass_rate_below_10_percent": 0.0,
+      "baseline_last_speed_median_error_m": 59.82789760687817,
+      "baseline_frozen_median_error_m": 72.15402375620259
+    },
+    "500m": {
+      "outage_count": 12,
+      "median_endpoint_error_m": 431.93101287660386,
+      "p95_endpoint_error_m": 774.9166328596622,
+      "median_drift_percent": 86.42493410291914,
+      "p95_drift_percent": 154.3945625833682,
+      "pass_rate_below_10_percent": 0.0,
+      "baseline_last_speed_median_error_m": 414.93663159797677,
+      "baseline_frozen_median_error_m": 496.8805011257116
+    },
+    "1000m": {
+      "outage_count": 11,
+      "median_endpoint_error_m": 798.9783966258841,
+      "p95_endpoint_error_m": 1343.95108331321,
+      "median_drift_percent": 79.95892268240023,
+      "p95_drift_percent": 134.22853816327083,
+      "pass_rate_below_10_percent": 0.0,
+      "baseline_last_speed_median_error_m": 800.6862159151685,
+      "baseline_frozen_median_error_m": 948.6962041075944
+    }
+  },
+  "by_run": {
+    "Vtb01": {
+      "outage_count": 11,
+      "median_endpoint_error_m": 280.4777689724699,
+      "median_drift_percent": 61.39496973206566,
+      "pass_rate_below_10_percent": 0.0
+    },
+    "Vtb02": {
+      "outage_count": 8,
+      "median_endpoint_error_m": 620.6829350178554,
+      "median_drift_percent": 88.98442623862933,
+      "pass_rate_below_10_percent": 0.0
+    },
+    "Vtb03": {
+      "outage_count": 1,
+      "median_endpoint_error_m": 132.30632078624683,
+      "median_drift_percent": 261.63523262521886,
+      "pass_rate_below_10_percent": 0.0
+    },
+    "Vtb04": {
+      "outage_count": 1,
+      "median_endpoint_error_m": 143.71410186724975,
+      "median_drift_percent": 289.5749969317552,
+      "pass_rate_below_10_percent": 0.0
+    },
+    "Vtb05": {
+      "outage_count": 10,
+      "median_endpoint_error_m": 643.9571146386735,
+      "median_drift_percent": 108.44513231190913,
+      "pass_rate_below_10_percent": 0.0
+    },
+    "Vtb08": {
+      "outage_count": 1,
+      "median_endpoint_error_m": 86.12749624513702,
+      "median_drift_percent": 167.85713553910765,
+      "pass_rate_below_10_percent": 0.0
+    },
+    "Vtb09": {
+      "outage_count": 1,
+      "median_endpoint_error_m": 102.58604817668625,
+      "median_drift_percent": 204.32211634938938,
+      "pass_rate_below_10_percent": 0.0
+    },
+    "Vtb12": {
+      "outage_count": 1,
+      "median_endpoint_error_m": 24.801048766767906,
+      "median_drift_percent": 48.95298100540327,
+      "pass_rate_below_10_percent": 0.0
+    }
+  },
+  "skipped_candidates_summary": {
+    "insufficient_reference_fixes_0": 11,
+    "run_too_short_for_endpoint": 23,
+    "insufficient_warmup": 63,
+    "duration_too_long_92.7s": 1
+  },
+  "demo_outage": {
+    "run_id": "Vtb02",
+    "outage_id": "500m_40pct",
+    "distance_m": 499.48656999999184,
+    "duration_s": 48.90099999999998,
+    "endpoint_error_m": 485.9889413809686,
+    "drift_percent": 97.29769939179276,
+    "last_speed_error_m": 444.2702095816751,
+    "frozen_error_m": 434.81702766806336,
+    "target_below_10_percent": false
+  },
+  "pass_rate_below_10_percent": 0.0,
+  "median_endpoint_error_m": 354.2503344304014,
+  "p95_endpoint_error_m": 1072.3334303911251,
+  "median_drift_percent": 80.31503788393306,
+  "note": "Held-out Vtb-family evaluation using withheld phone GNSS as a time-aligned reference, with quality-gated windows and comparisons against frozen and last-speed kinematic baselines."
+}
