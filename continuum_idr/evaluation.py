@@ -545,8 +545,8 @@ def _write_results_markdown(summary: dict, metrics: list[dict], path: Path) -> N
 This report documents the rigorous evaluation of the **Continuum IDR** dead reckoning engine on the complete held-out `Vtb*` test split from the IO-VNBD dataset. In accordance with strict evaluation protocols:
 1. **Zero Data Leakage:** The `Vtb*` test family was completely withheld during model training and hyperparameter selection.
 2. **Strict GNSS Blackout:** During each simulated outage (tunnel/blackout), all GNSS fields (position, velocity, heading, satellite count, accuracy) were strictly withheld from the engine.
-3. **Independent Time-Aligned Reference:** Ground-truth scoring uses phone GNSS positions recorded during the drive, strictly isolated to the evaluation layer.
-4. **Benchmarking Against Standard Baselines:** Continuum IDR is benchmarked alongside **Baseline 0 (Frozen Position)** and **Baseline 1 (Last-Speed + Gyro Kinematic Dead Reckoning)**.
+3. **Independent Time-Aligned Reference:** Scoring uses finite-accuracy phone GNSS positions recorded during the drive, strictly isolated to the evaluation layer.
+4. **Benchmarking Against Standard Baselines:** Continuum IDR is benchmarked alongside **Baseline 0 (Frozen Position)** and **Baseline 1 (Last-Speed + Gyro Kinematic Dead Reckoning)**. A negative reduction means the Continuum median is worse than that baseline.
 
 ---
 
@@ -559,8 +559,8 @@ This report documents the rigorous evaluation of the **Continuum IDR** dead reck
 | **Median Drift (% of Traveled Dist)** | **{overall['median_drift_percent']:.1f}%** | {overall['baseline_last_speed_median_drift_percent']:.1f}% | {overall['baseline_frozen_median_drift_percent']:.1f}% |
 | **95th Percentile Drift** | **{overall['p95_drift_percent']:.1f}%** | — | — |
 | **Pass Rate (< 10% Target)** | **{overall['pass_rate_below_10_percent']*100:.1f}%** | — | — |
-| **Improvement over Baseline 1** | **{overall['idr_improvement_over_last_speed_percent']:.1f}% reduction** | Reference | — |
-| **Improvement over Baseline 0** | **{overall['idr_improvement_over_frozen_percent']:.1f}% reduction** | — | Reference |
+| **Relative error reduction vs Baseline 1** | **{overall['idr_improvement_over_last_speed_percent']:.1f}%** | Reference | — |
+| **Relative error reduction vs Baseline 0** | **{overall['idr_improvement_over_frozen_percent']:.1f}%** | — | Reference |
 
 ---
 
@@ -618,6 +618,6 @@ To prevent deceptive evaluations where vehicles are parked for minutes or GPS cl
 1. **Sensor Sampling Rate:** The IO-VNBD dataset records smartphone IMU at 10 Hz. Results do not claim to validate 50–200 Hz industrial IMU operation.
 2. **Vehicle Mount Assumption:** The model assumes the smartphone is securely mounted in a forward-facing passenger vehicle. Handheld movement and phone re-orientations require separate online orientation tracking.
 3. **Road Environment:** Data reflects UK road networks. Validation on Indian roads (unmarked roads, aggressive speed-breakers, mixed traffic) remains planned work.
-4. **Honest Reporting:** While the engine substantially outperforms standard kinematic dead reckoning (cutting error significantly), dead reckoning drift on unconstrained smartphones naturally accumulates over long outages.
+4. **Honest Reporting:** The engine reduces overall median error relative to holding the last position, but does not beat the last-speed-plus-gyro baseline overall, and no evaluated outage meets the supplied under-10% target. Long smartphone-IMU outages remain an unresolved accuracy problem.
 """
     path.write_text(content, encoding="utf-8")

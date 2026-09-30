@@ -1,17 +1,108 @@
 from __future__ import annotations
 
 import argparse
+import json
+import threading
+import time
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 
+@dataclass
+class ReplaySession:
+    """In-memory replay clock shared by Studio and the driver view."""
+
+    sample_count: int = 0
+    index: int = 0
+    playing: bool = False
+    rate: float = 1.0
+    updated_at: float = 0.0
+
+    def __post_init__(self) -> None:
+        self.updated_at = time.monotonic()
+        self._lock = threading.Lock()
+
+    def _advance(self) -> None:
+        now = time.monotonic()
+        if self.playing and self.sample_count > 0:
+            # Evaluation replays are recorded at 10 Hz.
+            elapsed_samples = int((now - self.updated_at) * 10.0 * self.rate)
+            if elapsed_samples:
+                self.index = min(self.sample_count - 1, self.index + elapsed_samples)
+                self.updated_at += elapsed_samples / (10.0 * self.rate)
+                if self.index >= self.sample_count - 1:
+                    self.playing = False
+        else:
+            self.updated_at = now
+
+    def _snapshot_unlocked(self) -> dict[str, Any]:
+        return {
+            "index": self.index,
+            "playing": self.playing,
+            "rate": self.rate,
+            "sample_count": self.sample_count,
+        }
+
+    def snapshot(self) -> dict[str, Any]:
+        with self._lock:
+            self._advance()
+            return self._snapshot_unlocked()
+
+    def control(self, action: str, value: float | int | None = None) -> dict[str, Any]:
+        with self._lock:
+            self._advance()
+            if action == "play":
+                if self.index >= max(0, self.sample_count - 1):
+                    self.index = 0
+                self.playing = True
+            elif action == "pause":
+                self.playing = False
+            elif action == "restart":
+                self.index = 0
+                self.playing = False
+            elif action == "seek":
+                if value is None:
+                    raise ValueError("seek requires an index")
+                self.index = max(0, min(self.sample_count - 1, int(value)))
+            elif action == "rate":
+                if value is None or float(value) not in {0.5, 1.0, 2.0, 4.0}:
+                    raise ValueError("rate must be 0.5, 1, 2, or 4")
+                self.rate = float(value)
+            else:
+                raise ValueError(f"unknown replay action: {action}")
+            self.updated_at = time.monotonic()
+            return self._snapshot_unlocked()
+
+
+def _read_json(path: Path, missing_message: str) -> dict[str, Any]:
+    if not path.exists():
+        raise HTTPException(404, missing_message)
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def create_app(artifacts: Path) -> FastAPI:
     static = Path(__file__).parent / "studio_static"
-    app = FastAPI(title="Continuum Studio", version="0.1.0")
+    demo_path = artifacts / "demo_replay.json"
+    sample_count = 0
+    if demo_path.exists():
+        try:
+            sample_count = len(json.loads(demo_path.read_text(encoding="utf-8")).get("samples", []))
+        except (OSError, json.JSONDecodeError):
+            sample_count = 0
+
+    session = ReplaySession(sample_count=sample_count)
+    app = FastAPI(
+        title="Continuum Studio",
+        version="0.2.0",
+        docs_url=None,
+        redoc_url=None,
+    )
     app.mount("/static", StaticFiles(directory=static), name="static")
 
     @app.get("/")
@@ -22,19 +113,43 @@ def create_app(artifacts: Path) -> FastAPI:
     def mobile():
         return FileResponse(static / "mobile.html")
 
+    @app.get("/docs")
+    def docs_portal():
+        return FileResponse(static / "docs.html")
+
     @app.get("/api/demo")
     def demo():
-        path = artifacts / "demo_replay.json"
-        if not path.exists():
-            raise HTTPException(404, "Run `idr evaluate` before opening Studio")
-        return JSONResponse(content=__import__("json").loads(path.read_text(encoding="utf-8")))
+        return JSONResponse(
+            content=_read_json(demo_path, "Run `idr evaluate` before opening Studio")
+        )
 
     @app.get("/api/summary")
     def summary():
-        path = artifacts / "summary.json"
-        if not path.exists():
-            raise HTTPException(404, "Run `idr evaluate` before opening Studio")
-        return JSONResponse(content=__import__("json").loads(path.read_text(encoding="utf-8")))
+        return JSONResponse(
+            content=_read_json(
+                artifacts / "summary.json",
+                "Run `idr evaluate` before opening Studio",
+            )
+        )
+
+    @app.get("/api/session")
+    def get_session():
+        return session.snapshot()
+
+    @app.post("/api/session/control")
+    def control_session(payload: dict[str, Any] = Body(...)):
+        try:
+            return session.control(str(payload.get("action", "")), payload.get("value"))
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.get("/api/health")
+    def health():
+        return {
+            "status": "ready" if sample_count else "missing_artifacts",
+            "replay_samples": sample_count,
+            "artifacts": str(artifacts),
+        }
 
     return app
 

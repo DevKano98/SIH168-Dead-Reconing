@@ -1,128 +1,79 @@
-# Continuum IDR — Android Integration Guide
+# Continuum IDR — Android Source Integration
 
-This directory contains production-ready Kotlin source code for embedding **Continuum IDR** directly into an Android application (such as ride-hailing, food delivery, logistics, or turn-by-turn navigation apps) as a transparent location fallback provider.
+This directory contains Kotlin source for integrating the Continuum prototype with Android location and motion sensors. It is an integration reference, not a published Maven package or a device-certified production SDK.
 
----
-
-## 1. Files in this Package
+## Included files
 
 | File | Purpose |
-|---|---|
-| [`ContinuumLocationEngine.kt`](file:///d:/iovnbd/IO-VNBD/android/ContinuumLocationEngine.kt) | Implements Android `LocationListener` & `SensorEventListener`; handles GNSS timeout detection, fallback dead reckoning, and re-acquisition. |
-| [`PortableTreeRunner.kt`](file:///d:/iovnbd/IO-VNBD/android/PortableTreeRunner.kt) | Standalone decision tree runner that evaluates `motion_portable.json` with **zero external dependencies** (no PyTorch, TFLite, or scikit-learn needed). |
+| --- | --- |
+| `ContinuumLocationEngine.kt` | Reads Android location and motion events and emits fallback location updates |
+| `PortableTreeRunner.kt` | Evaluates the exported portable motion-model JSON without a Python runtime |
 
----
+The Android path has different implementation details from the Python evaluator. Establish numerical and full-trajectory parity before treating them as equivalent navigation runtimes.
 
-## 2. Quick Integration Steps (3 Steps)
+## Integrate the source
 
-### Step 1: Copy Assets & Source Files
-1. Copy `ContinuumLocationEngine.kt` and `PortableTreeRunner.kt` into your Android project under `app/src/main/java/ai/continuum/idr/`.
-2. Copy the exported model JSON file (`models/portable/motion_portable.json`) into your Android project's `app/src/main/assets/motion_portable.json`.
+1. Copy both Kotlin files into your application package and update their package declaration if necessary.
+2. Copy `models/portable/motion_portable.json` to `app/src/main/assets/motion_portable.json`.
+3. Add location and sensor permissions to the manifest.
+4. Load the portable model and start one engine instance for the active trip.
 
-### Step 2: Add Permissions to `AndroidManifest.xml`
 ```xml
-<manifest ...>
-    <!-- Standard Fine Location permission -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <!-- High-rate IMU sensor permission (Android 12+) -->
-    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
-</manifest>
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
 ```
 
-### Step 3: Initialize and Start Tracking
-In your `MainActivity.kt`, Navigation Service, or ViewModel:
+Request runtime location permission in your Activity or Compose flow before starting the engine.
 
 ```kotlin
-import ai.continuum.idr.ContinuumLocationEngine
-import ai.continuum.idr.PortableTreeRunner
+val json = assets.open("motion_portable.json")
+    .bufferedReader()
+    .use { it.readText() }
 
-class NavigationActivity : AppCompatActivity() {
+val runner = PortableTreeRunner.fromJsonString(json)
+val engine = ContinuumLocationEngine(this, runner)
 
-    private lateinit var locationEngine: ContinuumLocationEngine
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_navigation)
-
-        // 1. Load the ~4.2 KB portable model from assets
-        val jsonString = assets.open("motion_portable.json").bufferedReader().use { it.readText() }
-        val modelRunner = PortableTreeRunner.fromJsonString(jsonString)
-
-        // 2. Initialize Continuum Location Fallback Engine
-        locationEngine = ContinuumLocationEngine(this, modelRunner)
-
-        // 3. Start receiving seamless location updates
-        locationEngine.start(object : ContinuumLocationEngine.LocationUpdateCallback {
-            override fun onLocationUpdate(
-                location: Location,
-                isFallback: Boolean,
-                state: ContinuumLocationEngine.FallbackState
-            ) {
-                // 'location' is a standard Android Location object.
-                // Forward directly to Google Maps, Mapbox, or your UI!
-                runOnUiThread {
-                    updateMapMarker(location.latitude, location.longitude, location.bearing)
-                    if (isFallback) {
-                        showBanner("TUNNEL ACTIVE — Dead Reckoning via Phone IMU")
-                    } else {
-                        hideBanner()
-                    }
-                }
-            }
-
-            override fun onSurfaceAnomaly(eventType: String, severity: Double) {
-                // Real-time pothole or speed breaker alert
-                Log.w("ContinuumIDR", "Road anomaly detected: $eventType with severity $severity")
-            }
-
-            override fun onMountShiftDetected() {
-                // Phone mount slip / driver handled phone
-                Log.w("ContinuumIDR", "Phone mount shifted! Re-calibrating orientation.")
-            }
-        })
+engine.start(object : ContinuumLocationEngine.LocationUpdateCallback {
+    override fun onLocationUpdate(
+        location: Location,
+        isFallback: Boolean,
+        state: ContinuumLocationEngine.FallbackState
+    ) {
+        updateMap(location.latitude, location.longitude)
+        updatePositioningStatus(state, isFallback)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        locationEngine.stop()
+    override fun onSurfaceAnomaly(eventType: String, severity: Double) {
+        logSurfaceEvent(eventType, severity)
     }
-}
+
+    override fun onMountShiftDetected() {
+        showAlignmentWarning()
+    }
+})
 ```
 
----
+Call `engine.stop()` when the owning service or screen stops tracking.
 
-## 3. Integration with Third-Party Map SDKs
+## Client behaviour
 
-### Mapbox Navigation SDK Integration
-Mapbox supports custom location engines via `LocationEngine`:
-```kotlin
-val customLocationEngine = object : com.mapbox.android.core.location.LocationEngine {
-    // Forward ContinuumLocationEngine location updates directly into Mapbox Navigation session
-}
-mapboxNavigation.setLocationEngine(customLocationEngine)
-```
+Use `FallbackState` to explain positioning quality:
 
-### Google Maps Android SDK (`LocationSource`)
-```kotlin
-val locationSource = LocationSource { onLocationChangedListener ->
-    locationEngine.start(object : ContinuumLocationEngine.LocationUpdateCallback {
-        override fun onLocationUpdate(loc: Location, isFallback: Boolean, state: FallbackState) {
-            onLocationChangedListener.onLocationChanged(loc)
-        }
-        ...
-    })
-}
-googleMap.setLocationSource(locationSource)
-googleMap.isMyLocationEnabled = true
-```
+- `GNSS_HEALTHY`: normal location measurements are available.
+- `OUTAGE_PENDING`: the expected fix cadence has been missed but fallback is not confirmed.
+- `FALLBACK_ACTIVE`: the engine is emitting a dead-reckoned location.
+- `RECOVERING`: GNSS has returned and the engine is transitioning back.
 
----
+Show uncertainty or degraded status to the user. Do not describe a fallback estimate as lane-level unless an independent reference test supports that claim.
 
-## 4. Resource & Battery Benchmarks on Android
+## Required validation before a release
 
-- **APK Binary Size Impact**: **< 25 KB** (pure Kotlin code, zero external libraries).
-- **RAM Footprint**: **< 150 KB** (stored tree array).
-- **Inference Latency**: **< 0.15 ms** per sample on Snapdragon 8 Gen 1 / MediaTek Dimensity.
-- **Battery Impact**: **< 1.2% battery per hour** of active dead reckoning. Disables high-gain GPS antenna hunting during confirmed extended tunnel outages.
+- Confirm sensor axes and mounting assumptions on the target phone and vehicle.
+- Compare portable-runner output with the Python model for the same feature vectors.
+- Compare complete Android and Python trajectories for the same event stream.
+- Measure update rate, latency percentiles, missed deadlines, memory, battery, and thermal behaviour on named devices.
+- Test permission denial, missing sensors, timestamp gaps, background execution, process recreation, and GNSS recovery.
+- Run reference-based road tests outside the training domain.
+
+The repository currently supplies the source path and component tests. It does not contain the physical-device evidence needed to claim universal phone compatibility, a specific battery cost, or production accuracy.
