@@ -1,15 +1,27 @@
 # Continuum IDR — Android Source Integration
 
-This directory contains Kotlin source for integrating the Continuum prototype with Android location and motion sensors. It is an integration reference, not a published Maven package or a device-certified production SDK.
+This directory is a buildable Android application project plus the reusable Kotlin location engine. The app records real handset sensors and GNSS in a foreground service; it is not yet device-certified navigation software.
 
 ## Included files
 
 | File | Purpose |
 | --- | --- |
-| `ContinuumLocationEngine.kt` | Reads Android location and motion events and emits fallback location updates |
-| `PortableTreeRunner.kt` | Evaluates the exported portable motion-model JSON without a Python runtime |
+| `app/` | Installable recorder app module, manifest, foreground service and basic UI |
+| `app/src/main/java/ai/continuum/idr/ContinuumLocationEngine.kt` | Reads Android location and motion events and emits fallback location updates |
+| `app/src/main/java/ai/continuum/idr/PortableTreeRunner.kt` | Evaluates the exported portable motion-model JSON without a Python runtime |
 
-The Android path has different implementation details from the Python evaluator. Establish numerical and full-trajectory parity before treating them as equivalent navigation runtimes.
+The `app` module uses `models/portable/motion_portable.json` as an Android asset at build time. The checked-in model is verified against the Python bundle in `tests/test_portable_model.py`. Full-trajectory parity remains a release gate.
+
+## Build and use the recorder
+
+Install Android SDK Platform 36 and Build Tools 36.0.0, then set `ANDROID_HOME` (or create `android/local.properties` with `sdk.dir=...`). From this directory run:
+
+```powershell
+gradle wrapper --gradle-version 9.6.0
+.\gradlew.bat :app:assembleDebug
+```
+
+Install `app/build/outputs/apk/debug/app-debug.apk` on an Android 8+ phone. Grant location and notification permission, tap **Start trip recording**, drive a route, then tap **Stop recording**. The JSONL event file is saved under the app's external-files `trips` directory and can be exported with Android Studio Device Explorer or `adb pull`.
 
 ## Integrate the source
 

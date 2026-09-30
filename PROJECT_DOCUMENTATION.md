@@ -1,5 +1,7 @@
 # Continuum IDR: product and prototype documentation
 
+For the current implementation assessment and the staged path to an installable Android product, see the [product delivery plan](PRODUCT_DELIVERY_PLAN.md) (30 September 2026). It covers verified code gaps, mobile inference, real and synthetic data, navigation accuracy, cooperative traffic warnings, delivery milestones and acceptance evidence. The older design documents below remain useful background; their completion claims must be checked against this assessment and actual artifacts.
+
 **Working product name:** Continuum IDR SDK. This is a proposed name, not a trademark or availability claim.
 
 **Product idea:** an embeddable navigation engine that accepts timestamped IMU measurements and optional GNSS fixes, then produces continuous position, velocity, heading, uncertainty, and sensor-health information. A developer integrates the engine into a navigation app, vehicle device, or edge computer. Training and evaluation tools accompany the runtime.

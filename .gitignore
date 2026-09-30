@@ -98,6 +98,7 @@ Unsynchronised V and S Dataset/
 android/.gradle/
 android/build/
 android/*/build/
+.tools/
 .gradle/
 local.properties
 *.apk

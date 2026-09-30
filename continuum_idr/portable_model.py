@@ -8,6 +8,7 @@ Includes parity verification against Scikit-Learn HistGradientBoosting models.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -62,6 +63,8 @@ class PortableMotionBundle:
         feature_scales: np.ndarray | None = None,
         linear_weights: np.ndarray | None = None,
         linear_intercept: float = 0.0,
+        stop_linear_weights: np.ndarray | None = None,
+        stop_linear_intercept: float | None = None,
     ):
         self.speed_mean = speed_mean
         self.speed_scale = speed_scale
@@ -73,6 +76,8 @@ class PortableMotionBundle:
         self.feature_scales = feature_scales if feature_scales is not None else np.ones(len(FEATURE_NAMES))
         self.linear_weights = linear_weights
         self.linear_intercept = linear_intercept
+        self.stop_linear_weights = stop_linear_weights
+        self.stop_linear_intercept = stop_linear_intercept
 
     @property
     def window_samples(self) -> int:
@@ -115,8 +120,12 @@ class PortableMotionBundle:
 
         speed_mps = float(np.clip(pred_speed, 0.0, 50.0))
 
-        # 2. Stop classification
-        if self.stop_trees:
+        # 2. Stop classification.  The P0 bundle uses LogisticRegression;
+        # this path is intentionally separate from the speed tree ensemble.
+        if self.stop_linear_weights is not None:
+            logit = float(np.dot(self.stop_linear_weights, norm_features) + (self.stop_linear_intercept or 0.0))
+            stop_prob = 1.0 / (1.0 + math.exp(-logit))
+        elif self.stop_trees:
             logit = self.stop_mean
             for tree in self.stop_trees:
                 idx = 0
@@ -141,8 +150,13 @@ class PortableMotionBundle:
             else:
                 stop_prob = float(np.clip(1.0 - (total_energy / 0.5), 0.0, 1.0))
 
-        # Uncertainty: lower when speed is low and steady, higher during rapid maneuvers
-        speed_std = float(max(0.35, 0.08 * speed_mps + 0.2))
+        edges = np.asarray(self.manifest.get("uncertainty_bins_mps", []), dtype=float)
+        values = np.asarray(self.manifest.get("uncertainty_std_mps", []), dtype=float)
+        if len(edges) >= 2 and len(values):
+            bin_index = int(np.clip(np.searchsorted(edges, speed_mps, side="right") - 1, 0, len(values) - 1))
+            speed_std = float(values[bin_index])
+        else:
+            speed_std = float(max(0.35, 0.08 * speed_mps + 0.2))
 
         return MotionPrediction(
             speed_mps=speed_mps,
@@ -156,6 +170,8 @@ class PortableMotionBundle:
         path.parent.mkdir(parents=True, exist_ok=True)
         data = {
             "model_id": self.model_id,
+            "format_version": 2,
+            "feature_names": list(self.manifest.get("feature_names", FEATURE_NAMES)),
             "manifest": self.manifest,
             "speed_mean": self.speed_mean,
             "speed_scale": self.speed_scale,
@@ -166,6 +182,8 @@ class PortableMotionBundle:
             "stop_trees": self.stop_trees,
             "linear_weights": self.linear_weights.tolist() if self.linear_weights is not None else None,
             "linear_intercept": self.linear_intercept,
+            "stop_linear_weights": self.stop_linear_weights.tolist() if self.stop_linear_weights is not None else None,
+            "stop_linear_intercept": self.stop_linear_intercept,
         }
         path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
@@ -184,6 +202,8 @@ class PortableMotionBundle:
             feature_scales=np.asarray(data["feature_scales"], dtype=float),
             linear_weights=np.asarray(data["linear_weights"], dtype=float) if data.get("linear_weights") is not None else None,
             linear_intercept=float(data.get("linear_intercept", 0.0)),
+            stop_linear_weights=np.asarray(data["stop_linear_weights"], dtype=float) if data.get("stop_linear_weights") is not None else None,
+            stop_linear_intercept=float(data["stop_linear_intercept"]) if data.get("stop_linear_intercept") is not None else None,
         )
 
     @classmethod
@@ -193,14 +213,16 @@ class PortableMotionBundle:
         speed_model = sklearn_bundle.speed_model
         stop_model = sklearn_bundle.stop_model
 
-        # Extract features baseline from training manifest if available
+        # P0 models are trained directly on the 42 feature values.  Keep these
+        # explicit so later versions can add normalisation without changing the
+        # portable format.
         feature_means = np.zeros(len(FEATURE_NAMES))
         feature_scales = np.ones(len(FEATURE_NAMES))
 
-        # Check if linear regressor or tree model
+        # Check if linear regressor or tree model.
         linear_weights = None
         linear_intercept = 0.0
-        speed_trees = []
+        speed_trees: list[list[dict[str, Any]]] = []
         stop_trees = []
 
         # If HistGradientBoostingRegressor, extract base prediction and trees
@@ -210,14 +232,39 @@ class PortableMotionBundle:
         elif hasattr(speed_model, "init_"):
             speed_mean = 10.0
 
-        stop_mean = 0.0
-        if hasattr(stop_model, "_baseline_prediction"):
-            stop_mean = float(np.ravel(stop_model._baseline_prediction)[0])
+        if not hasattr(speed_model, "_predictors"):
+            raise TypeError("portable export currently requires HistGradientBoostingRegressor speed model")
+        for predictors in speed_model._predictors:
+            nodes = predictors[0].nodes
+            tree: list[dict[str, Any]] = []
+            for node in nodes:
+                is_leaf = bool(node["is_leaf"])
+                if is_leaf:
+                    # HistGradientBoostingRegressor stores each fitted leaf
+                    # contribution with its learning-rate scaling already
+                    # applied.  Applying it again would shrink every update.
+                    tree.append({"v": float(node["value"])})
+                else:
+                    tree.append(
+                        {
+                            "f": int(node["feature_idx"]),
+                            "th": float(node["num_threshold"]),
+                            "l": int(node["left"]),
+                            "r": int(node["right"]),
+                        }
+                    )
+            speed_trees.append(tree)
+
+        # LogisticRegression stores its fitted decision function directly.
+        if not hasattr(stop_model, "coef_") or not hasattr(stop_model, "intercept_"):
+            raise TypeError("portable export currently requires a fitted linear stop classifier")
+        stop_weights = np.asarray(stop_model.coef_[0], dtype=float)
+        stop_intercept = float(stop_model.intercept_[0])
 
         return cls(
             speed_mean=speed_mean,
             speed_scale=1.0,
-            stop_mean=stop_mean,
+            stop_mean=0.0,
             manifest=manifest,
             speed_trees=speed_trees,
             stop_trees=stop_trees,
@@ -225,4 +272,6 @@ class PortableMotionBundle:
             feature_scales=feature_scales,
             linear_weights=linear_weights,
             linear_intercept=linear_intercept,
+            stop_linear_weights=stop_weights,
+            stop_linear_intercept=stop_intercept,
         )

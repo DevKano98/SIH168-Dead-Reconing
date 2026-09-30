@@ -70,7 +70,27 @@ def test_conversion_from_sklearn_bundle():
         sklearn_bundle = MotionModelBundle.load(model_dir)
         portable = PortableMotionBundle.from_sklearn_bundle(sklearn_bundle)
 
-        sample_window = np.zeros((20, 6))
-        pred = portable.predict(sample_window)
-        assert pred.speed_mps >= 0.0
-        assert 0.0 <= pred.stop_probability <= 1.0
+        assert len(portable.speed_trees) == len(sklearn_bundle.speed_model._predictors)
+        assert portable.stop_linear_weights is not None
+        rng = np.random.default_rng(2026)
+        for _ in range(5):
+            sample_window = rng.normal(size=(20, 6))
+            expected = sklearn_bundle.predict(sample_window)
+            actual = portable.predict(sample_window)
+            assert actual.speed_mps == pytest.approx(expected.speed_mps, abs=1e-9)
+            assert actual.stop_probability == pytest.approx(expected.stop_probability, abs=1e-9)
+
+
+def test_checked_in_portable_model_contains_trained_weights():
+    model_dir = Path("models/motion_p0")
+    portable_path = Path("models/portable/motion_portable.json")
+    if model_dir.joinpath("manifest.json").exists() and portable_path.exists():
+        sklearn_bundle = MotionModelBundle.load(model_dir)
+        portable = PortableMotionBundle.load_json(portable_path)
+        assert len(portable.speed_trees) == len(sklearn_bundle.speed_model._predictors)
+        assert portable.stop_linear_weights is not None
+        sample_window = np.arange(120, dtype=float).reshape(20, 6) / 100.0
+        expected = sklearn_bundle.predict(sample_window)
+        actual = portable.predict(sample_window)
+        assert actual.speed_mps == pytest.approx(expected.speed_mps, abs=1e-9)
+        assert actual.stop_probability == pytest.approx(expected.stop_probability, abs=1e-9)
