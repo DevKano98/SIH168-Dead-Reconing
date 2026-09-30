@@ -4,6 +4,26 @@
 
 **Canonical experiment:** `iovnbd-vtb-heldout-p0`
 
+## Interactive backend & frontend update — 2026-09-30
+
+The new `/api/runtime` API processes raw recorded IMU/GNSS through a running SDK.
+Manual GPS disable/restore gates actual estimator input; pause, step, speed,
+restart, shared session telemetry, and JSON export are implemented. Reference
+data is used only for scoring. This is recorded sensor input, not live phone sensing.
+
+**Frontend implementation:** The frontend in `continuum_idr/studio_static/`
+(`index.html`, `app.js`, `mobile.html`, `mobile.js`, `docs.html`, `style.css`)
+has been completely rebuilt and connected to `/api/runtime` and `/api/runtime/control`.
+Legacy `/api/session` and `/api/demo` have been eliminated from the interactive workspace.
+Serial polling at 250ms, manual GPS withholding, live metric canvas rendering with scale bar,
+mobile driver view synchronization, and developer portal documentation are verified.
+
+Verification: 78 tests passed, including 14 runtime tests. The real-recording test
+checks GPS-on/off produce different SDK states and processes the whole interval.
+Tests also cover withheld-reference isolation, restore semantics, timestamp-based
+pacing, restart, invalid controls, missing dependencies, and JSON export. Frontend
+visual and functional verification against live backend completed.
+
 **Prototype status:** Working research SDK, evaluator, synchronized replay application, developer portal, and Android source integration
 
 **Accuracy status:** The current held-out artifact does not meet the supplied under-10% drift target

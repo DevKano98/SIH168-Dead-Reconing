@@ -1,135 +1,457 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f8fafc">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
   <title>Continuum SDK Documentation</title>
   <link rel="stylesheet" href="/static/docs.css">
 </head>
 <body>
   <header class="docs-topbar">
-    <a class="docs-brand" href="/"><span class="docs-logo">C</span><strong>Continuum</strong><em>Docs</em></a>
+    <a class="docs-brand" href="/">
+      <span class="docs-logo">C</span>
+      <strong>Continuum</strong><em>Docs</em>
+    </a>
     <button class="mobile-menu" id="mobile-menu" aria-label="Toggle navigation">☰</button>
-    <nav><a href="/">Studio</a><a href="/mobile">Driver view</a><a class="github" href="https://github.com/DevKano98/SIH168-Dead-Reconing">Repository ↗</a></nav>
+    <nav>
+      <a href="/">Studio</a>
+      <a href="/mobile">Driver View</a>
+      <a class="github" href="https://github.com/DevKano98/SIH168-Dead-Reconing" target="_blank" rel="noopener">GitHub Repository ↗</a>
+    </nav>
   </header>
+
   <div class="docs-layout">
+    <!-- Sidebar Navigation -->
     <aside class="docs-sidebar" id="docs-sidebar">
-      <label class="docs-search"><span>⌕</span><input id="docs-search" type="search" placeholder="Search documentation"></label>
+      <label class="docs-search">
+        <span>⌕</span>
+        <input id="docs-search" type="search" placeholder="Search documentation...">
+      </label>
       <nav id="docs-nav">
-        <p>GET STARTED</p><a href="#overview">Overview</a><a href="#quickstart">Quickstart</a><a href="#concepts">Core concepts</a>
-        <p>PYTHON SDK</p><a href="#installation">Installation</a><a href="#engine">Create an engine</a><a href="#events">Send sensor events</a><a href="#state">Read navigation state</a><a href="#configuration">Configuration</a>
-        <p>INTEGRATION GUIDES</p><a href="#python-guide">Python application</a><a href="#android-guide">Android / Kotlin</a><a href="#lifecycle">Outage lifecycle</a>
-        <p>REFERENCE</p><a href="#api">API reference</a><a href="#units">Frames and units</a><a href="#errors">Errors and health flags</a>
-        <p>EVIDENCE</p><a href="#architecture">Architecture</a><a href="#evaluation">Evaluation</a><a href="#limits">Known limitations</a>
+        <p>GET STARTED</p>
+        <a href="#overview">Overview & Boundaries</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="#concepts">Core Navigation Concepts</a>
+
+        <p>LOCAL EXPERIMENT HTTP API</p>
+        <a href="#runtime-api">Runtime HTTP Endpoints</a>
+        <a href="#runtime-controls">Control Contract & Actions</a>
+        <a href="#runtime-timing">Timing & GPS Semantics</a>
+
+        <p>PYTHON RESEARCH SDK</p>
+        <a href="#installation">Installation & Setup</a>
+        <a href="#engine">Engine Initialization</a>
+        <a href="#events">Feeding Sensor Events</a>
+        <a href="#state">Reading Navigation State</a>
+        <a href="#configuration">Engine Configuration</a>
+
+        <p>MOBILE INTEGRATION</p>
+        <a href="#android-guide">Android Kotlin Source</a>
+        <a href="#portable-model">Zero-Dependency Model</a>
+
+        <p>EVALUATION & LIMITS</p>
+        <a href="#evaluation">Historical Benchmark</a>
+        <a href="#limits">Known Limitations</a>
       </nav>
-      <footer><span>SDK version</span><strong>0.1.0</strong></footer>
+      <footer>
+        <span>SDK & Studio Version</span>
+        <strong>0.3.0 (Interactive)</strong>
+      </footer>
     </aside>
 
+    <!-- Main Content Area -->
     <main class="docs-content">
-      <article id="overview" data-search="overview navigation sdk dead reckoning gnss imu">
-        <div class="eyebrow">CONTINUUM IDR SDK</div><h1>Navigation continuity when GNSS is unavailable</h1>
-        <p class="lead">Continuum is a local Python SDK that accepts ordered smartphone IMU samples and optional GNSS fixes, then returns position, speed, heading, uncertainty, and tracking health.</p>
-        <div class="hero-actions"><a class="primary-link" href="#quickstart">Start integrating</a><a class="secondary-link" href="/">View the evaluated replay</a></div>
-        <div class="callout honest"><strong>Prototype status</strong><p>The repository contains a working research SDK, evaluation toolkit, replay Studio, portable JSON model runner, and Kotlin integration source. The current held-out evaluation does not meet the supplied under-10% drift target. Treat it as preliminary engineering evidence.</p></div>
-        <div class="feature-row"><div><i>01</i><strong>Causal inputs</strong><span>The runtime consumes ordered events and cannot access withheld reference data.</span></div><div><i>02</i><strong>Local execution</strong><span>The Python engine and portable model do not require a live cloud service.</span></div><div><i>03</i><strong>Observable state</strong><span>Every output exposes mode, uncertainty, GNSS decision, and health flags.</span></div></div>
+      <!-- Overview -->
+      <article id="overview" data-search="overview navigation sdk dead reckoning gnss imu boundaries prototype">
+        <div class="eyebrow">CONTINUUM IDR RESEARCH SDK</div>
+        <h1>Vehicle Dead Reckoning Navigation Fallback</h1>
+        <p class="lead">
+          Continuum is an autonomous dead-reckoning engine designed for Smart India Hackathon SIH168.
+          It fuses smartphone inertial sensors (accelerometers, gyroscopes) with learned longitudinal speed estimation,
+          an Extended Kalman Filter (EKF), zero-velocity updates (ZUPT), and kinematic constraints to maintain position continuity when GNSS is lost.
+        </p>
+
+        <div class="callout honest">
+          <strong>Research Prototype & Evidence Boundary</strong>
+          <p>
+            This system runs real-time Python and Kotlin algorithmic pipelines on recorded vehicle trials (IO-VNBD dataset).
+            It is <strong>NOT live smartphone sensing</strong> and <strong>NOT certified aviation/automotive navigation</strong>.
+            Current held-out benchmark drift misses the &lt;10% target without external wheel odometry or road map-matching. We report all evaluation metrics transparently.
+          </p>
+        </div>
+
+        <div class="feature-row">
+          <div>
+            <i>01</i>
+            <strong>Causal Inference</strong>
+            <span>Consumes time-ordered IMU samples without future knowledge or non-causal lookahead.</span>
+          </div>
+          <div>
+            <i>02</i>
+            <strong>Zero-Dependency Mobile Core</strong>
+            <span>Exported portable JSON decision trees evaluate in pure Kotlin on Android in &lt;150 µs.</span>
+          </div>
+          <div>
+            <i>03</i>
+            <strong>Transparent State</strong>
+            <span>Exposes tracking mode, covariance uncertainty radius, GPS decision gating, and health flags.</span>
+          </div>
+        </div>
       </article>
 
-      <article id="quickstart" data-search="quickstart install example first integration"><div class="section-label">GET STARTED</div><h2>Run your first engine session</h2><p>Install the package, load the supplied motion model, create the engine, and deliver measurements in timestamp order.</p>
-        <div class="steps"><div><b>1</b><span><strong>Install the package</strong><small>From the repository root:</small></span></div></div>
-        <pre><button class="copy">Copy</button><code>python -m pip install -e .</code></pre>
-        <div class="steps"><div><b>2</b><span><strong>Create the engine</strong><small>The model and engine must use the same IMU rate.</small></span></div></div>
+      <!-- Quickstart -->
+      <article id="quickstart" data-search="quickstart install example first integration idrengine">
+        <div class="section-label">GET STARTED</div>
+        <h2>Run Your First Engine Session</h2>
+        <p>Install the package in editable mode, load the trained P0 model bundle, configure the engine, and stream sensor events in timestamp order.</p>
+
+        <div class="steps">
+          <div><b>1</b><span><strong>Install Package & Dependencies</strong><small>Run in your Python 3.10+ virtual environment:</small></span></div>
+        </div>
+        <pre><button class="copy">Copy</button><code>pip install -e .
+python -m pytest tests/</code></pre>
+
+        <div class="steps">
+          <div><b>2</b><span><strong>Initialize IDREngine</strong><small>Match IMU sampling frequency to model specification (10 Hz):</small></span></div>
+        </div>
         <pre><button class="copy">Copy</button><code><span class="kw">from</span> continuum_idr <span class="kw">import</span> IDREngine, EngineConfig, MotionModelBundle
 
+<span class="cm"># Load trained gradient boosting speed model</span>
 model = MotionModelBundle.load(<span class="str">"models/motion_p0"</span>)
-config = EngineConfig(imu_rate_hz=<span class="num">10.0</span>, gnss_timeout_s=<span class="num">2.0</span>)
+config = EngineConfig(imu_rate_hz=<span class="num">10.0</span>, gnss_timeout_s=<span class="num">12.0</span>)
 engine = IDREngine(config, model)</code></pre>
-        <div class="steps"><div><b>3</b><span><strong>Send events and read state</strong><small>GNSS initializes absolute position. IMU propagation continues between fixes.</small></span></div></div>
+
+        <div class="steps">
+          <div><b>3</b><span><strong>Stream Sensor Events</strong><small>Deliver GNSS fixes and IMU samples monotonically:</small></span></div>
+        </div>
         <pre><button class="copy">Copy</button><code><span class="kw">from</span> continuum_idr <span class="kw">import</span> GNSSFix, IMUSample
 
+<span class="cm"># Seed initial position with accepted GNSS</span>
 engine.on_gnss(GNSSFix(
     timestamp_s=<span class="num">100.0</span>, latitude_deg=<span class="num">52.4001</span>, longitude_deg=<span class="num">-1.5002</span>,
-    speed_mps=<span class="num">12.5</span>, course_deg=<span class="num">92.0</span>, horizontal_accuracy_m=<span class="num">3.5</span>,
+    speed_mps=<span class="num">12.5</span>, course_deg=<span class="num">92.0</span>, horizontal_accuracy_m=<span class="num">3.5</span>
 ))
 
+<span class="cm"># Propagate dead-reckoning state at high frequency</span>
 state = engine.on_imu(IMUSample(
     timestamp_s=<span class="num">100.1</span>, accel_mps2=(<span class="num">0.12</span>, <span class="num">0.05</span>, <span class="num">9.81</span>),
     gyro_radps=(<span class="num">0.001</span>, <span class="num">-0.015</span>, <span class="num">0.002</span>),
-    gravity_mps2=(<span class="num">0.0</span>, <span class="num">0.0</span>, <span class="num">9.81</span>),
+    gravity_mps2=(<span class="num">0.0</span>, <span class="num">0.0</span>, <span class="num">9.81</span>)
 ))
-print(state.tracking_mode, state.latitude_deg, state.longitude_deg)</code></pre>
+print(f<span class="str">"Mode: {state.tracking_mode.value}, Speed: {state.speed_mps * 3.6:.1f} km/h, Uncertainty: ±{state.horizontal_uncertainty_m:.1f}m"</span>)</code></pre>
       </article>
 
-      <article id="concepts" data-search="concepts inputs output model fusion gnss outage recovery"><div class="section-label">CORE CONCEPTS</div><h2>One state, optional measurements</h2><p>Continuum keeps one estimator alive across the complete journey. IMU samples propagate motion. Accepted GNSS fixes correct the state. When fixes stop arriving, the same estimator enters dead reckoning and grows uncertainty.</p>
-        <div class="flow"><div><span>Inputs</span><b>IMU + optional GNSS</b></div><i>→</i><div><span>Continuum core</span><b>Motion model + EKF</b></div><i>→</i><div><span>Output</span><b>State + confidence</b></div></div>
-        <table><thead><tr><th>Mode</th><th>Meaning</th><th>Client behaviour</th></tr></thead><tbody><tr><td><code>UNINITIALIZED</code></td><td>No accepted absolute position yet</td><td>Do not display a fabricated location</td></tr><tr><td><code>GNSS_AIDED</code></td><td>Accepted GNSS is updating the running estimator</td><td>Display normal positioning status</td></tr><tr><td><code>DEAD_RECKONING</code></td><td>GNSS is missing or unusable</td><td>Show fallback status and uncertainty</td></tr><tr><td><code>RECOVERING</code></td><td>Returning fixes are being validated</td><td>Avoid presenting the first fix as fully trusted</td></tr></tbody></table>
+      <!-- Core Concepts -->
+      <article id="concepts" data-search="concepts tracking mode uninitialized gnss aided dead reckoning recovering">
+        <div class="section-label">CORE CONCEPTS</div>
+        <h2>Tracking Modes & Lifecycle</h2>
+        <p>Continuum maintains a single continuous estimator throughout the entire journey. Incoming IMU samples propagate dead-reckoning motion. Accepted GNSS fixes correct drift. When fixes cease, uncertainty naturally grows.</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking Mode</th>
+              <th>Operational Meaning</th>
+              <th>Client UI Responsibility</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>UNINITIALIZED</code></td>
+              <td>Awaiting initial high-confidence absolute GNSS fix</td>
+              <td>Do not render a fabricated vehicle position</td>
+            </tr>
+            <tr>
+              <td><code>GNSS_AIDED</code></td>
+              <td>GPS fixes fused with inertial propagation</td>
+              <td>Display normal green positioning state</td>
+            </tr>
+            <tr>
+              <td><code>DEAD_RECKONING</code></td>
+              <td>GPS lost or withheld; EKF running on IMU + ML speed</td>
+              <td>Show amber fallback badge and display uncertainty ring</td>
+            </tr>
+            <tr>
+              <td><code>RECOVERING</code></td>
+              <td>GPS re-acquired; validating fixes with innovation gating</td>
+              <td>Show blue status; avoid instant discontinuous jump</td>
+            </tr>
+          </tbody>
+        </table>
       </article>
 
-      <article id="installation" data-search="installation requirements python dependencies editable package"><div class="section-label">PYTHON SDK</div><h2>Installation</h2><p>Continuum requires Python 3.10 or later. The repository package declares NumPy, pandas, scikit-learn, joblib, FastAPI, and Uvicorn.</p><pre><button class="copy">Copy</button><code>python --version
-python -m pip install -e .
-python -m pytest tests/</code></pre><div class="callout"><strong>Model files</strong><p>The default integration expects a trained bundle under <code>models/motion_p0/</code>. Keep its manifest and model files together.</p></div></article>
+      <!-- Local Experiment Runtime HTTP API -->
+      <article id="runtime-api" data-search="runtime api http endpoints get post control export session docs runtime_api.md">
+        <div class="section-label">LOCAL EXPERIMENT HTTP API</div>
+        <h2>Runtime HTTP Endpoints</h2>
+        <p>
+          Studio and the mobile driver view connect to an interactive local HTTP API defined in 
+          <a href="file:///d:/iovnbd/IO-VNBD/docs/RUNTIME_API.md" target="_blank"><code>docs/RUNTIME_API.md</code></a>.
+          This API runs <code>IDREngine</code> directly on raw recorded IO-VNBD sensor measurements.
+        </p>
 
-      <article id="engine" data-search="engine constructor model config initialize reset"><div class="section-label">PYTHON SDK</div><h2>Create an engine</h2><p><code>IDREngine</code> validates the model sampling rate when constructed. The engine begins uninitialized and establishes a local ENU coordinate frame from an accepted GNSS fix.</p><pre><button class="copy">Copy</button><code>model = MotionModelBundle.load(<span class="str">"models/motion_p0"</span>)
-engine = IDREngine(EngineConfig(), model)
-
-<span class="cm"># Clear dynamic state while keeping configuration and model</span>
-engine.reset(<span class="str">"new_trip"</span>)</code></pre></article>
-
-      <article id="events" data-search="events imu gnss timestamp order input sample"><div class="section-label">PYTHON SDK</div><h2>Send sensor events</h2><p>Call <code>on_imu()</code> and <code>on_gnss()</code> in measurement-time order. Timestamps use seconds in the Python prototype. Accelerometer values use m/s² and gyroscope values use rad/s.</p>
-        <div class="two-col"><div><h3>IMUSample</h3><ul><li><code>timestamp_s</code> — monotonic measurement time</li><li><code>accel_mps2</code> — three sensor-axis values</li><li><code>gyro_radps</code> — three sensor-axis values</li><li><code>gravity_mps2</code> — optional gravity estimate</li><li><code>sensor_id</code> — profile identifier</li></ul></div><div><h3>GNSSFix</h3><ul><li><code>latitude_deg</code>, <code>longitude_deg</code> — WGS84</li><li><code>speed_mps</code> — optional ground speed</li><li><code>course_deg</code> — clockwise from north</li><li><code>horizontal_accuracy_m</code> — provider accuracy</li><li><code>fix_id</code> — optional identity for diagnostics</li></ul></div></div>
+        <table>
+          <thead>
+            <tr>
+              <th>HTTP Request</th>
+              <th>Endpoint</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>GET</code></td>
+              <td><code>/api/runtime</code></td>
+              <td>Lazily initializes SDK session, advances due samples based on elapsed wall time, and returns complete snapshot.</td>
+            </tr>
+            <tr>
+              <td><code>POST</code></td>
+              <td><code>/api/runtime/control</code></td>
+              <td>Applies a runtime control action (play, pause, step, gnss, rate, restart) and returns the updated snapshot.</td>
+            </tr>
+            <tr>
+              <td><code>GET</code></td>
+              <td><code>/api/runtime/export</code></td>
+              <td>Advances due samples and downloads the current session snapshot as a JSON file.</td>
+            </tr>
+            <tr>
+              <td><code>GET</code></td>
+              <td><code>/api/summary</code></td>
+              <td>Serves historical benchmark results (34 outages). Unrelated to manual experiment controls.</td>
+            </tr>
+            <tr>
+              <td><code>GET</code></td>
+              <td><code>/api/health</code></td>
+              <td>Basic process status. Note: <code>status: ready</code> alone does not certify runtime initialization; <code>/api/runtime</code> is authoritative.</td>
+            </tr>
+          </tbody>
+        </table>
       </article>
 
-      <article id="state" data-search="navigation state output latitude longitude speed heading uncertainty mode"><div class="section-label">PYTHON SDK</div><h2>Read navigation state</h2><p>Every event handler returns a <code>NavigationState</code>. You can also request the latest immutable snapshot with <code>get_state()</code>.</p><pre><button class="copy">Copy</button><code>state = engine.get_state()
-payload = state.to_dict()
+      <!-- Runtime Control Contract -->
+      <article id="runtime-controls" data-search="runtime controls json action value play pause restart gnss step rate">
+        <div class="section-label">LOCAL EXPERIMENT HTTP API</div>
+        <h2>Control Contract & Payloads</h2>
+        <p>Send a JSON body with <code>action</code> and optional <code>value</code> to <code>POST /api/runtime/control</code>:</p>
 
-<span class="kw">if</span> state.latitude_deg <span class="kw">is not</span> <span class="num">None</span>:
-    update_marker(state.latitude_deg, state.longitude_deg)
+        <table>
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Value</th>
+              <th>Runtime Effect</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>play</code></td>
+              <td><em>omitted</em></td>
+              <td>Resumes continuous playback. Completed sessions require restart.</td>
+            </tr>
+            <tr>
+              <td><code>pause</code></td>
+              <td><em>omitted</em></td>
+              <td>Pauses processing after catching up a bounded batch.</td>
+            </tr>
+            <tr>
+              <td><code>restart</code></td>
+              <td><em>omitted</em></td>
+              <td>Creates a fresh engine instance, resets warm-up, pauses, restores GPS to enabled, 1x rate, and assigns a new session ID.</td>
+            </tr>
+            <tr>
+              <td><code>gnss</code></td>
+              <td><code>false</code> / <code>true</code></td>
+              <td>Deliver or withhold subsequent newly recorded GPS fixes from the engine.</td>
+            </tr>
+            <tr>
+              <td><code>step</code></td>
+              <td>Integer <code>1–100</code></td>
+              <td>Processes the next <em>N</em> recorded samples while paused; clamps at end of recording.</td>
+            </tr>
+            <tr>
+              <td><code>rate</code></td>
+              <td><code>0.5</code>, <code>1.0</code>, <code>2.0</code>, <code>4.0</code></td>
+              <td>Source-time playback multiplier relative to real wall clock time.</td>
+            </tr>
+          </tbody>
+        </table>
 
-show_quality(
-    mode=state.tracking_mode.value,
-    uncertainty_m=state.horizontal_uncertainty_m,
-    flags=state.health_flags,
-)</code></pre>
-        <table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>latitude_deg / longitude_deg</code></td><td>Estimated WGS84 location after initialization</td></tr><tr><td><code>east_m / north_m</code></td><td>Position in the session’s local ENU frame</td></tr><tr><td><code>speed_mps / heading_deg</code></td><td>Forward speed and heading clockwise from north</td></tr><tr><td><code>horizontal_uncertainty_m</code></td><td>Estimated horizontal uncertainty radius</td></tr><tr><td><code>last_gnss_decision</code></td><td>Most recent GNSS acceptance or rejection result</td></tr><tr><td><code>health_flags</code></td><td>Independent quality conditions detected by the engine</td></tr></tbody></table>
+        <div class="callout">
+          <strong>Smoke Test via PowerShell</strong>
+          <p>You can execute headless smoke tests against the running server:</p>
+        </div>
+        <pre><button class="copy">Copy</button><code>Invoke-RestMethod http://127.0.0.1:8000/api/runtime
+Invoke-RestMethod http://127.0.0.1:8000/api/runtime/control -Method Post -ContentType application/json -Body '{ "action": "gnss", "value": false }'
+Invoke-RestMethod http://127.0.0.1:8000/api/runtime/control -Method Post -ContentType application/json -Body '{ "action": "step", "value": 50 }'</code></pre>
       </article>
 
-      <article id="configuration" data-search="configuration engine config timeout rate noise map vehicle profile"><div class="section-label">PYTHON SDK</div><h2>Configuration</h2><p>Start from <code>EngineConfig()</code> and change only settings justified for the sensor and model you deploy.</p><table><thead><tr><th>Setting</th><th>Default</th><th>Purpose</th></tr></thead><tbody><tr><td><code>imu_rate_hz</code></td><td>10 Hz</td><td>Must match the motion model input rate</td></tr><tr><td><code>model_update_hz</code></td><td>2 Hz</td><td>Frequency of learned speed updates</td></tr><tr><td><code>gnss_timeout_s</code></td><td>1.5 s</td><td>Age after which GNSS is considered unavailable</td></tr><tr><td><code>max_imu_gap_s</code></td><td>0.5 s</td><td>Maximum propagation step before a gap is flagged</td></tr><tr><td><code>vehicle_profile</code></td><td>passenger_car</td><td>Selects configured kinematic limits</td></tr><tr><td><code>enable_map_matching</code></td><td>false</td><td>Enables map output after a graph is supplied</td></tr></tbody></table></article>
+      <!-- Timing & Semantics -->
+      <article id="runtime-timing" data-search="timing gps semantics timeout polling withholding gating">
+        <div class="section-label">LOCAL EXPERIMENT HTTP API</div>
+        <h2>Timing & GPS Semantics</h2>
+        <p>
+          GET and control requests advance at most 100 samples toward the recorded timestamp corresponding to elapsed monotonic wall time and playback rate.
+          There is no autonomous background worker when no HTTP requests arrive; polling drives bounded processing.
+        </p>
+        <ul>
+          <li><strong>GPS Withholding is Manual:</strong> GPS starts enabled. Toggling to withheld blocks <code>on_gnss()</code> calls while <code>on_imu()</code> continues. It does not rewrite past history or instantly change tracking mode until timeout (12s).</li>
+          <li><strong>Restoring GPS:</strong> Admits future newly recorded fixes; it does not backfill withheld fixes. The engine's innovation gate may reject degraded fixes upon re-entry.</li>
+          <li><strong>Serial Polling:</strong> Clients must poll serially (200–300 ms), suspending polls while a control request is in flight to prevent stale race conditions.</li>
+        </ul>
+      </article>
 
-      <article id="python-guide" data-search="python integration guide adapter loop stream application"><div class="section-label">INTEGRATION GUIDE</div><h2>Python application pattern</h2><p>Your adapter owns the sensor connection and forwards normalized events to one engine instance. The client renders the returned state; it should never estimate a second position independently.</p><pre><button class="copy">Copy</button><code><span class="kw">for</span> event <span class="kw">in</span> source.events_in_timestamp_order():
-    <span class="kw">if</span> event.kind == <span class="str">"gnss"</span>:
-        state = engine.on_gnss(event.fix)
-    <span class="kw">else</span>:
-        state = engine.on_imu(event.sample)
+      <!-- Python SDK Details -->
+      <article id="installation" data-search="installation python dependencies pip">
+        <div class="section-label">PYTHON SDK</div>
+        <h2>Installation & Package Setup</h2>
+        <p>Continuum requires Python 3.10+. Dependencies include NumPy, SciPy, scikit-learn, joblib, and FastAPI.</p>
+        <pre><button class="copy">Copy</button><code>git clone https://github.com/DevKano98/SIH168-Dead-Reconing.git
+cd SIH168-Dead-Reconing
+pip install -e .</code></pre>
+      </article>
 
-    client.publish(state.to_dict())</code></pre><div class="callout"><strong>Threading</strong><p>Serialize calls into the engine. A live adapter may use a bounded queue, but it should preserve measurement ordering and report dropped samples.</p></div></article>
+      <!-- Engine Config -->
+      <article id="configuration" data-search="configuration engineconfig settings options parameters">
+        <div class="section-label">PYTHON SDK</div>
+        <h2>Engine Configuration Options</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>imu_rate_hz</code></td>
+              <td><code>10.0</code></td>
+              <td>Nominal accelerometer/gyroscope sampling rate (must match motion model).</td>
+            </tr>
+            <tr>
+              <td><code>model_update_hz</code></td>
+              <td><code>2.0</code></td>
+              <td>Rate of learned longitudinal velocity regression updates.</td>
+            </tr>
+            <tr>
+              <td><code>gnss_timeout_s</code></td>
+              <td><code>12.0</code></td>
+              <td>Duration after last accepted fix before transitioning to <code>DEAD_RECKONING</code>.</td>
+            </tr>
+            <tr>
+              <td><code>gnss_gate_sigma</code></td>
+              <td><code>5.0</code></td>
+              <td>Chi-squared innovation gate threshold rejecting multipath coordinate spikes.</td>
+            </tr>
+            <tr>
+              <td><code>enable_zupt_hysteresis</code></td>
+              <td><code>True</code></td>
+              <td>Dual-threshold Schmitt-trigger crawl stop detection.</td>
+            </tr>
+            <tr>
+              <td><code>enable_gyro_bias_adaptation</code></td>
+              <td><code>True</code></td>
+              <td>Online gyroscope bias adaptation during verified stops and straight driving lines.</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
 
-      <article id="android-guide" data-search="android kotlin mobile integration location sensor asset portable model"><div class="section-label">INTEGRATION GUIDE</div><h2>Android / Kotlin source integration</h2><p>The <code>android/</code> directory supplies Kotlin source for a portable tree runner and an Android location fallback engine. It is source integration rather than a published Maven package.</p><ol><li>Copy <code>ContinuumLocationEngine.kt</code> and <code>PortableTreeRunner.kt</code> into your application package.</li><li>Copy <code>models/portable/motion_portable.json</code> into <code>app/src/main/assets/</code>.</li><li>Add fine/coarse location and high sampling rate sensor permissions.</li><li>Create the runner, start the engine, and handle its callback.</li></ol><pre><button class="copy">Copy</button><code><span class="kw">val</span> modelJson = assets.open(<span class="str">"motion_portable.json"</span>)
-    .bufferedReader().use { it.readText() }
-<span class="kw">val</span> runner = PortableTreeRunner.fromJsonString(modelJson)
-<span class="kw">val</span> engine = ContinuumLocationEngine(<span class="kw">this</span>, runner)
+      <!-- Mobile Integration -->
+      <article id="android-guide" data-search="android kotlin source mobile integration engine">
+        <div class="section-label">MOBILE INTEGRATION</div>
+        <h2>Android Kotlin Source Integration</h2>
+        <p>
+          The repository includes pure Kotlin source files in 
+          <a href="file:///d:/iovnbd/IO-VNBD/android/README.md" target="_blank"><code>android/</code></a>
+          providing an Android <code>LocationEngine</code> implementation.
+        </p>
+
+        <div class="callout warning">
+          <strong>Integration Source Notice</strong>
+          <p>
+            This code provides modular source integration for Android applications, not a published Maven Central artifact.
+            Developers should evaluate battery consumption and sensor jitter on target hardware.
+          </p>
+        </div>
+
+        <pre><button class="copy">Copy</button><code><span class="kw">val</span> modelJson = assets.open(<span class="str">"motion_portable.json"</span>).bufferedReader().use { it.readText() }
+<span class="kw">val</span> treeRunner = PortableTreeRunner.fromJsonString(modelJson)
+<span class="kw">val</span> engine = ContinuumLocationEngine(context, treeRunner)
 
 engine.start(<span class="kw">object</span> : ContinuumLocationEngine.LocationUpdateCallback {
     <span class="kw">override fun</span> onLocationUpdate(
-        location: Location, isFallback: Boolean,
+        location: Location,
+        isFallback: Boolean,
         state: ContinuumLocationEngine.FallbackState
-    ) { updateMap(location, state) }
-})</code></pre><div class="callout warning"><strong>Validation boundary</strong><p>The included Kotlin code has not been established here as a released, device-certified Android SDK. Measure accuracy, latency, memory, and battery use on the target phone before making production claims.</p></div></article>
+    ) {
+        <span class="cm">// Route update to your map view</span>
+    }
+})</code></pre>
+      </article>
 
-      <article id="lifecycle" data-search="outage lifecycle transition recovery aided dead reckoning"><div class="section-label">INTEGRATION GUIDE</div><h2>Handle the positioning lifecycle</h2><div class="lifecycle"><div><i>1</i><strong>Initialize</strong><span>Wait for a credible absolute fix and motion state.</span></div><b>→</b><div><i>2</i><strong>GNSS aided</strong><span>Fuse accepted fixes with inertial motion.</span></div><b>→</b><div><i>3</i><strong>Dead reckoning</strong><span>Continue estimates and grow uncertainty.</span></div><b>→</b><div><i>4</i><strong>Recover</strong><span>Validate returning fixes before normal aiding.</span></div></div></article>
+      <!-- Evaluation & Benchmark -->
+      <article id="evaluation" data-search="evaluation benchmark held-out driver e results drift error">
+        <div class="section-label">EVALUATION & EVIDENCE</div>
+        <h2>Held-Out Evaluation Results</h2>
+        <p>
+          Evaluated across 34 independent blackout scenarios on unseen Driver E (Samsung Galaxy S8):
+        </p>
 
-      <article id="api" data-search="api reference methods on imu gnss get state reset road graph"><div class="section-label">REFERENCE</div><h2>API reference</h2><div class="api-list"><section><code>IDREngine(config, model)</code><p>Creates an engine and validates rate compatibility.</p></section><section><code>on_imu(sample) → NavigationState</code><p>Validates and processes one IMU sample.</p></section><section><code>on_gnss(fix) → NavigationState</code><p>Validates, gates, and optionally fuses one GNSS measurement.</p></section><section><code>get_state(timestamp_s=None) → NavigationState</code><p>Returns the latest state snapshot.</p></section><section><code>reset(reason="manual")</code><p>Clears dynamic state and history for a new session.</p></section><section><code>set_road_graph(graph)</code><p>Attaches a road graph for optional candidate matching.</p></section><section><code>on_wheel_speed(sample) → NavigationState</code><p>Applies optional wheel odometry when configured.</p></section></div></article>
+        <div class="result-cards" id="docs-results">
+          <div>
+            <span>Evaluated Outages</span>
+            <strong>34</strong>
+          </div>
+          <div>
+            <span>Median Endpoint Error</span>
+            <strong>354.3 m</strong>
+          </div>
+          <div>
+            <span>Median Drift %</span>
+            <strong>80.3%</strong>
+          </div>
+          <div>
+            <span>Below 10% Target</span>
+            <strong style="color: var(--amber);">0.0%</strong>
+          </div>
+        </div>
 
-      <article id="units" data-search="units frames enu heading acceleration gyro timestamp"><div class="section-label">REFERENCE</div><h2>Frames and units</h2><table><thead><tr><th>Quantity</th><th>Contract</th></tr></thead><tbody><tr><td>Position</td><td>WGS84 degrees externally; local east/north metres internally</td></tr><tr><td>Heading</td><td>Degrees clockwise from north</td></tr><tr><td>Acceleration</td><td>Metres per second squared (m/s²)</td></tr><tr><td>Angular rate</td><td>Radians per second (rad/s)</td></tr><tr><td>Speed</td><td>Metres per second (m/s)</td></tr><tr><td>Python timestamp</td><td>Monotonic measurement time in seconds</td></tr><tr><td>Android timestamp</td><td>Adapter maps nanosecond sensor clocks into its session time</td></tr></tbody></table></article>
+        <div class="callout warning">
+          <strong>Interpreting the Results</strong>
+          <p>
+            Continuum IDR outperforms frozen GPS by <strong>+28.7%</strong> overall and <strong>+48.0%</strong> on short 50m outages.
+            However, consumer MEMS gyroscopes accumulate unconstrained lateral drift on curves over extended outages without road map matching or CAN wheel speed odometry.
+          </p>
+        </div>
+      </article>
 
-      <article id="errors" data-search="errors health flags invalid imu gap out of order alignment"><div class="section-label">REFERENCE</div><h2>Health flags and rejected input</h2><p>The prototype records degraded conditions in <code>NavigationState.health_flags</code> and exposes the latest GNSS decision. Clients should surface meaningful degraded status rather than hiding it.</p><div class="tag-grid"><span>INVALID_IMU</span><span>OUT_OF_ORDER_IMU</span><span>IMU_GAP</span><span>SUSPECT_ALIGNMENT</span><span>GNSS_REJECTED</span><span>LOW_CONFIDENCE</span></div><div class="callout"><strong>Input ordering</strong><p>An out-of-order IMU sample is flagged and does not receive normal propagation. Large gaps increase uncertainty and are reported.</p></div></article>
+      <!-- Known Limitations -->
+      <article id="limits" data-search="limitations challenges future work sensors">
+        <div class="section-label">EVIDENCE & BOUNDARIES</div>
+        <h2>Known Limitations</h2>
+        <ul class="limits">
+          <li><strong>Phone GPS Update Rate:</strong> In IO-VNBD recordings, raw smartphone GPS updates at ~0.1 Hz (~9–10s intervals), requiring time-based filtering.</li>
+          <li><strong>Consumer Gyroscope Drift:</strong> MEMS gyros experience thermal drift that degrades heading orientation over long durations without map constraints.</li>
+          <li><strong>Mounted Phone Requirement:</strong> Evaluated assuming a windshield/dashboard mount. Handheld shaking introduces high vertical vibration noise.</li>
+          <li><strong>Pure Software Fallback:</strong> Without access to vehicle CAN wheel-speed sensors, high-accuracy multi-kilometer dead reckoning remains challenging.</li>
+        </ul>
+      </article>
 
-      <article id="architecture" data-search="architecture diagram model ekf evaluator studio"><div class="section-label">EVIDENCE</div><h2>System architecture</h2><div class="architecture"><div class="arch-input"><span>Phone IMU</span><span>Optional GNSS</span><span>Optional wheel data</span></div><b>→</b><div class="arch-core"><strong>Continuum IDR</strong><span>Feature window</span><span>Motion model</span><span>EKF and quality logic</span></div><b>→</b><div class="arch-output"><span>Position</span><span>Speed and heading</span><span>Uncertainty and health</span></div></div><p>The evaluation reference sits outside this runtime flow. Studio reads saved states and evaluator metrics; it cannot feed the reference trajectory back into the engine.</p></article>
-
-      <article id="evaluation" data-search="evaluation benchmark results drift held out vtb baseline"><div class="section-label">EVIDENCE</div><h2>Current held-out evaluation</h2><p>The current artifact evaluates 34 quality-gated blackout windows from the held-out Vtb family. Phone GNSS is withheld from the engine during each outage and retained by the evaluator for scoring.</p><div class="result-cards" id="docs-results"><div><span>Outages</span><strong>Loading…</strong></div><div><span>Median endpoint error</span><strong>—</strong></div><div><span>Median drift</span><strong>—</strong></div><div><span>Below 10% target</span><strong>—</strong></div></div><div class="callout warning"><strong>How to read this result</strong><p>A working replay and a lower error than the frozen baseline do not prove the target has been met. Compare Continuum with both the frozen-position and last-speed-plus-gyro baselines.</p></div><a class="primary-link" href="/">Inspect the selected replay</a></article>
-
-      <article id="limits" data-search="limitations accuracy phone android motorcycle map production"><div class="section-label">EVIDENCE</div><h2>Known limitations</h2><ul class="limits"><li>The IO-VNBD smartphone stream used here is approximately 10 Hz and cannot validate 200 Hz navigation accuracy.</li><li>The held-out evaluation currently reports zero outages below the supplied 10% drift target.</li><li>Absolute constant speed is weakly observable from a short IMU window, so entry state and motion priors matter.</li><li>The evaluation assumes a mounted passenger-car phone profile. Handheld use, motorcycles, Indian roads, and other phones need separate data.</li><li>The browser driver view replays desktop-generated evidence; it is not proof of on-device inference.</li><li>Road matching modules exist in the repository, but the displayed evaluation does not establish lane-level accuracy.</li></ul></article>
-      <footer class="docs-footer"><span>Continuum IDR prototype documentation</span><a href="#overview">Back to top ↑</a></footer>
+      <footer class="docs-footer">
+        <span>Continuum IDR Prototype Documentation</span>
+        <a href="#overview">Back to top ↑</a>
+      </footer>
     </main>
-    <aside class="toc"><p>ON THIS PAGE</p><nav id="toc"></nav></aside>
+
+    <!-- Table of Contents -->
+    <aside class="toc">
+      <p>ON THIS PAGE</p>
+      <nav id="toc"></nav>
+    </aside>
   </div>
+
   <script src="/static/docs.js"></script>
 </body>
 </html>

@@ -3,79 +3,379 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#07111f">
-  <title>Continuum Studio — GNSS outage replay</title>
+  <meta name="theme-color" content="#080d16">
+  <title>Continuum Studio — Runtime Dead Reckoning Workspace</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="studio-page">
+<body>
+  <!-- Top Navigation Bar -->
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Continuum Studio home">
-      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span><strong>Continuum</strong><small>Studio</small></span>
-    </a>
-    <nav class="product-nav" aria-label="Product navigation">
-      <a class="active" href="/">Replay</a><a href="/docs">Documentation</a><a href="/mobile">Driver view</a>
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <strong>Continuum</strong>
+        <small>Studio</small>
+      </div>
+    </div>
+
+    <nav class="nav-links" aria-label="Studio navigation">
+      <a href="/" class="active" id="nav-studio">Studio</a>
+      <a href="#evidence" id="nav-evidence">Evidence & Benchmark</a>
+      <a href="/mobile" target="_blank" rel="noopener">Driver View ↗</a>
+      <a href="/docs" target="_blank" rel="noopener">Developer Docs ↗</a>
     </nav>
-    <div class="top-actions"><span class="connection"><i></i> Local engine</span><button class="quiet-button" id="open-overview">Experiment details</button></div>
+
+    <div class="top-meta">
+      <div class="badge-status" id="connection-badge">
+        <i class="dot"></i>
+        <span id="connection-text">Connecting to SDK...</span>
+      </div>
+    </div>
   </header>
 
   <main class="studio-shell">
-    <section class="workspace-heading">
-      <div><p class="kicker">RECORDED SDK EVALUATION</p><h1>GNSS outage replay</h1><p class="heading-copy">Inspect how the navigation estimate behaves before, during, and after a measured blackout.</p></div>
-      <div class="identity-strip" aria-label="Experiment identity">
-        <div><span>Run</span><strong id="run-id">Loading…</strong></div><div><span>Scenario</span><strong id="outage-id">—</strong></div><div><span>Model</span><strong id="model">—</strong></div>
+    <!-- Error / Connection Recovery Banner -->
+    <section class="error-banner" id="error-banner">
+      <div id="error-message">Unable to connect to Continuum Python SDK runtime.</div>
+      <button id="btn-retry" type="button">Retry Connection</button>
+    </section>
+
+    <!-- Primary Workflow Banner -->
+    <section class="workflow-banner" aria-label="Experiment workflow">
+      <div class="workflow-steps">
+        <span class="workflow-label">Interactive Workflow:</span>
+        <div class="workflow-step active" id="step-1">
+          <span class="step-num">1</span>
+          <span>Start Engine</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="workflow-step" id="step-2">
+          <span class="step-num">2</span>
+          <span>Withhold GPS</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="workflow-step" id="step-3">
+          <span class="step-num">3</span>
+          <span>Observe Dead Reckoning</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="workflow-step" id="step-4">
+          <span class="step-num">4</span>
+          <span>Restore GPS & Export</span>
+        </div>
+      </div>
+      <div class="workflow-meta" id="workflow-run-meta">
+        Run: <span id="meta-run-id">—</span> · Model: <span id="meta-model-id">—</span>
       </div>
     </section>
 
-    <section class="replay-grid">
-      <article class="map-panel">
-        <div class="map-toolbar">
-          <div class="segmented" role="group" aria-label="Map layers"><button class="selected" data-layer="estimate">Estimate</button><button class="selected" data-layer="reference">Reference</button><button class="selected" data-layer="baselines">Baselines</button></div>
-          <div class="map-actions"><span id="scale-label">—</span><button id="fit-map">Fit route</button></div>
-        </div>
-        <canvas id="trajectory" aria-label="Trajectory replay map"></canvas>
-        <div class="map-status" id="map-status"><span class="status-dot"></span><div><small>Navigation state</small><strong id="mode">Waiting for replay</strong></div></div>
-        <div class="map-legend" id="map-legend"><span><i class="line estimate"></i>Continuum estimate</span><span><i class="line reference"></i>Evaluation reference</span><span><i class="line baseline"></i>Last-speed baseline</span></div>
-        <div class="map-provenance">Reference is used for scoring only and is isolated from the SDK.</div>
-      </article>
+    <!-- Workspace Grid -->
+    <div class="workspace-grid">
+      <!-- Left: Prominent Trajectory Canvas Workspace -->
+      <section class="trajectory-panel" aria-label="Trajectory canvas workspace">
+        <div class="panel-toolbar">
+          <div class="toolbar-group">
+            <span class="toolbar-label">Layers:</span>
+            <button class="btn-toggle active estimate" id="toggle-estimate" type="button">
+              <span class="indicator"></span> Estimate
+            </button>
+            <button class="btn-toggle active reference" id="toggle-reference" type="button">
+              <span class="indicator"></span> Reference (Offline)
+            </button>
+            <button class="btn-toggle active uncertainty" id="toggle-uncertainty" type="button">
+              <span class="indicator"></span> Uncertainty Ring
+            </button>
+            <button class="btn-toggle active" id="toggle-grid" type="button">
+              Grid
+            </button>
+          </div>
 
-      <aside class="inspector-panel">
-        <div class="inspector-title"><div><p class="kicker">LIVE REPLAY STATE</p><h2 id="phase-title">Aided navigation</h2></div><span class="phase-pill" id="phase-pill">READY</span></div>
-        <div class="primary-metric"><span>Estimated speed</span><strong><b id="speed">—</b> <small>km/h</small></strong><em id="speed-delta">Waiting for data</em></div>
-        <div class="metric-list">
-          <div><span>Measured error <button class="info" title="Available because the evaluator has an isolated reference.">i</button></span><strong id="error">—</strong></div>
-          <div><span>Estimated uncertainty</span><strong id="uncertainty">—</strong></div><div><span>Heading</span><strong id="heading">—</strong></div>
-          <div><span>GNSS delivery</span><strong id="gnss">—</strong></div><div><span>Last GNSS decision</span><strong id="decision">—</strong></div>
+          <div class="toolbar-group">
+            <button class="btn-action" id="btn-zoom-in" title="Zoom in" type="button">+</button>
+            <button class="btn-action" id="btn-zoom-out" title="Zoom out" type="button">−</button>
+            <button class="btn-action" id="btn-recenter" title="Recenter and fit route" type="button">⊙ Recenter</button>
+          </div>
         </div>
-        <div class="outage-progress"><div><span>Blackout progress</span><strong id="outage-progress-label">Not started</strong></div><div class="progress-track"><i id="outage-bar"></i></div><div class="progress-meta"><span id="outage-timer">0.0 s</span><span id="outage-distance">—</span></div></div>
-        <div class="event-card" id="event-card"><i></i><div><span id="event-label">Ready</span><p id="event-copy">Start the replay to inspect the saved estimator output.</p></div></div>
+
+        <div class="canvas-container" id="canvas-container">
+          <canvas id="trajectory-canvas"></canvas>
+
+          <!-- Top-Left Metric Coordinate Readout -->
+          <div class="canvas-overlay-top">
+            <div class="overlay-badge" id="coord-badge">
+              E: <span id="disp-east">—</span> m · N: <span id="disp-north">—</span> m
+            </div>
+            <div class="overlay-badge" id="uncertainty-cap-notice" style="display:none; color: var(--amber);">
+              Visual uncertainty capped at 120m radius on canvas; numeric value is authoritative.
+            </div>
+          </div>
+
+          <!-- Bottom Metric Scale & Provenance Note -->
+          <div class="canvas-overlay-bottom">
+            <div class="canvas-note">
+              <strong>Local Metric Frame (East/North)</strong>: Continuous integration from IO-VNBD sensor recording. Not a geographic street map.
+            </div>
+            <div class="scale-bar-container">
+              <div class="scale-bar-line" id="scale-bar-line" style="width: 60px;"></div>
+              <span class="scale-bar-label" id="scale-bar-label">50 m</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Navigation State Inspector Sidebar -->
+      <aside class="inspector-panel" aria-label="Navigation state inspector">
+        <!-- Live State Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Navigation State</h2>
+            <span class="mode-pill uninitialized" id="tracking-mode-pill">UNINITIALIZED</span>
+          </div>
+
+          <!-- Hero Speedometer -->
+          <div class="speed-hero">
+            <div class="speed-value-group">
+              <span class="speed-main" id="speed-val">—</span>
+              <span class="speed-unit">KM/H</span>
+            </div>
+            <div class="speed-mps" id="speed-mps-val">— m/s</div>
+          </div>
+
+          <!-- Distinct Quantities: Measured Error vs Estimated Uncertainty -->
+          <div class="dual-metric-grid">
+            <div class="dual-metric-box">
+              <span class="dual-metric-label">Measured Error</span>
+              <span class="dual-metric-val" id="measured-error-val">— m</span>
+              <div class="dual-metric-sub">Distance to offline reference</div>
+            </div>
+            <div class="dual-metric-box">
+              <span class="dual-metric-label">Estimated Uncertainty</span>
+              <span class="dual-metric-val" id="estimated-uncertainty-val">— m</span>
+              <div class="dual-metric-sub">EKF 1-sigma horizontal bound</div>
+            </div>
+          </div>
+
+          <!-- Telemetry Attributes -->
+          <div class="telemetry-list">
+            <div class="telemetry-row">
+              <span class="telemetry-key">Vehicle Heading</span>
+              <span class="telemetry-val mono" id="heading-val">—°</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">GPS Input Switch</span>
+              <span class="telemetry-val" id="gps-switch-state">Delivering</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">GPS Delivery Event</span>
+              <span class="telemetry-val">
+                <span class="gps-badge idle" id="gps-delivery-badge">Idle</span>
+              </span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">Last GNSS Decision</span>
+              <span class="telemetry-val mono" id="last-decision-val">—</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">Accepted GNSS Age</span>
+              <span class="telemetry-val mono" id="accepted-age-val">— s</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-key">Active Health Flags</span>
+              <span class="telemetry-val mono" id="health-flags-val">None</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Provenance & Session Counters Card -->
+        <div class="card provenance-card">
+          <div class="card-header">
+            <h2>Session Provenance</h2>
+            <span id="completion-status-badge" style="font-size: 10px; color: var(--text-faint);">IN PROGRESS</span>
+          </div>
+
+          <div class="provenance-grid">
+            <div class="provenance-item">
+              <span>Source Run</span>
+              <strong id="card-run-id">—</strong>
+            </div>
+            <div class="provenance-item">
+              <span>Input Mode</span>
+              <strong>Recorded IO-VNBD</strong>
+            </div>
+            <div class="provenance-item">
+              <span>IMU Processed</span>
+              <strong id="cnt-imu">—</strong>
+            </div>
+            <div class="provenance-item">
+              <span>GPS Delivered</span>
+              <strong id="cnt-delivered">—</strong>
+            </div>
+            <div class="provenance-item">
+              <span>GPS Withheld</span>
+              <strong id="cnt-withheld" style="color: var(--amber);">0</strong>
+            </div>
+            <div class="provenance-item">
+              <span>Rate</span>
+              <strong id="card-rate">1.0×</strong>
+            </div>
+          </div>
+
+          <!-- Read-only Progress -->
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="session-progress-fill"></div>
+          </div>
+          <div class="progress-labels">
+            <span id="elapsed-time-label">00:00.0</span>
+            <span id="total-time-label">00:00.0</span>
+          </div>
+        </div>
       </aside>
+    </div>
+
+    <!-- Transport Controls Bar -->
+    <section class="transport-panel" aria-label="Playback and sensor controls">
+      <div class="transport-main-controls">
+        <button class="btn-ctrl primary" id="btn-play" type="button" title="Shortcut: Space">
+          <span id="play-icon">▶</span>
+          <span id="play-text">Start Engine</span>
+        </button>
+
+        <button class="btn-ctrl" id="btn-step" type="button" title="Step 25 samples forward (Shortcut: S)">
+          <span>⏭</span> Step +25
+        </button>
+
+        <button class="btn-ctrl gps-toggle" id="btn-toggle-gnss" type="button" title="Shortcut: G">
+          <span id="gnss-toggle-icon">⌁</span>
+          <span id="gnss-toggle-text">Withhold GPS (Simulate Tunnel)</span>
+        </button>
+
+        <button class="btn-ctrl" id="btn-restart" type="button" title="Restart with fresh session ID (Shortcut: R)">
+          <span>↺</span> Restart
+        </button>
+      </div>
+
+      <div class="transport-meta-controls">
+        <div class="select-control">
+          <span>Speed:</span>
+          <select id="rate-select" aria-label="Playback speed multiplier">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1.0×</option>
+            <option value="2">2.0×</option>
+            <option value="4">4.0×</option>
+          </select>
+        </div>
+
+        <button class="btn-export" id="btn-export" type="button" title="Download runtime session snapshot JSON">
+          ↓ Export Session JSON
+        </button>
+      </div>
     </section>
 
-    <section class="transport-panel" aria-label="Replay controls">
-      <div class="transport-buttons"><button class="transport primary" id="play"><span>▶</span><b>Play replay</b></button><button class="transport" id="jump-outage"><span>⌁</span><b>Jump to outage</b></button><button class="transport" id="jump-recovery"><span>↗</span><b>Jump to recovery</b></button><button class="icon-button" id="reset" aria-label="Restart replay">↺</button></div>
-      <div class="timeline-wrap"><div class="timeline-labels"><span>Aided warm-up</span><span>GNSS withheld</span><span>Recovery</span></div><div class="timeline-row"><time id="clock">00:00.0</time><input id="seek" type="range" min="0" value="0" step="1"><time id="duration">00:00.0</time></div></div>
-      <label class="rate-control">Replay speed<select id="rate"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+    <!-- Collapsible Session Event Log -->
+    <section class="event-log-panel" aria-label="Session control event log">
+      <div class="event-log-header" id="event-log-toggle">
+        <div class="event-log-title">
+          <span>Session Control Event Log</span>
+          <span id="event-count-badge" style="font-size: 10px; color: var(--text-faint);">(1 event)</span>
+        </div>
+        <span id="event-log-chevron" style="color: var(--text-faint);">▲</span>
+      </div>
+      <div class="event-log-content" id="event-log-body">
+        <table class="event-table">
+          <thead>
+            <tr>
+              <th>Timestamp (s)</th>
+              <th>Action</th>
+              <th>After Source Index</th>
+              <th>GPS State</th>
+              <th>Rate</th>
+            </tr>
+          </thead>
+          <tbody id="event-table-body">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-faint);">No control events recorded yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <section class="evidence-grid">
-      <article class="evidence-card outcome-card">
-        <header><div><p class="kicker">SELECTED OUTAGE</p><h2>Measured outcome</h2></div><span id="target-badge" class="result-badge">—</span></header>
-        <div class="outcome-main"><div><span>Endpoint error</span><strong><b id="endpoint">—</b> m</strong></div><div><span>Distance-normalized drift</span><strong><b id="drift">—</b>%</strong></div><div><span>Reference distance</span><strong><b id="reference-distance">—</b> m</strong></div></div>
-        <div class="comparison-bars" id="comparison-bars"></div><p class="evidence-note">Values come from the saved causal evaluation. This representative outage is selected by the evaluator’s documented median-result rule.</p>
-      </article>
-      <article class="evidence-card chart-card"><header><div><p class="kicker">CURRENT REPLAY</p><h2>Error over time</h2></div><span class="chart-value" id="chart-current">— m</span></header><canvas id="error-chart"></canvas><div class="chart-legend"><span><i></i>Continuum error</span><span class="marker"><i></i>Current time</span></div></article>
-    </section>
+    <!-- Evidence Section: Historical Benchmark -->
+    <section class="evidence-section" id="evidence" aria-label="Historical benchmark evidence">
+      <div class="evidence-header">
+        <div class="evidence-title-group">
+          <h2>Historical Benchmark Evidence</h2>
+          <p>
+            This section presents the formal offline evaluation across 34 held-out blackout windows (Driver E).
+            <strong>It is strictly separate from the live manual session above.</strong> No comparison baseline exists for your manual experiment; we do not fabricate one.
+          </p>
+        </div>
+        <div class="evidence-badge">Historical Evaluation</div>
+      </div>
 
-    <section class="benchmark-panel">
-      <header><div><p class="kicker">COMPLETE HELD-OUT SCHEDULE</p><h2>Benchmark evidence</h2><p id="benchmark-note">Loading evaluated outages…</p></div><a class="text-link" href="/docs#evaluation">Read evaluation method →</a></header>
-      <div class="benchmark-summary"><div><span>Test runs</span><strong id="test-runs">—</strong></div><div><span>Evaluated outages</span><strong id="outage-count">—</strong></div><div><span>Median error</span><strong id="median-error">—</strong></div><div><span>Median drift</span><strong id="median-drift">—</strong></div><div><span>Below 10% target</span><strong id="pass-rate">—</strong></div></div>
-      <div class="table-scroll"><table><thead><tr><th>Distance</th><th>Outages</th><th>Continuum median</th><th>Last-speed median</th><th>Frozen median</th><th>Median drift</th><th>Pass rate</th></tr></thead><tbody id="aggregate-table-body"></tbody></table></div>
+      <!-- Aggregate Benchmark Stats -->
+      <div class="benchmark-stats-grid">
+        <div class="benchmark-stat-box">
+          <span class="benchmark-stat-label">Independent Test Runs</span>
+          <span class="benchmark-stat-val" id="bench-runs">—</span>
+        </div>
+        <div class="benchmark-stat-box">
+          <span class="benchmark-stat-label">Evaluated Outages</span>
+          <span class="benchmark-stat-val" id="bench-outages">—</span>
+        </div>
+        <div class="benchmark-stat-box">
+          <span class="benchmark-stat-label">Median Endpoint Error</span>
+          <span class="benchmark-stat-val" id="bench-median-error">—</span>
+        </div>
+        <div class="benchmark-stat-box">
+          <span class="benchmark-stat-label">Median Drift %</span>
+          <span class="benchmark-stat-val" id="bench-median-drift">—</span>
+        </div>
+        <div class="benchmark-stat-box">
+          <span class="benchmark-stat-label">Below 10% Target</span>
+          <span class="benchmark-stat-val" id="bench-pass-rate" style="color: var(--amber);">0.0%</span>
+        </div>
+      </div>
+
+      <!-- Distance Breakdown Table -->
+      <div class="benchmark-table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Outage Distance</th>
+              <th>Outages Evaluated</th>
+              <th>IDR Median Error</th>
+              <th>Last-Speed Baseline</th>
+              <th>Frozen GPS Baseline</th>
+              <th>Median Drift %</th>
+              <th>Pass Rate (&lt;10%)</th>
+            </tr>
+          </thead>
+          <tbody id="bench-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-faint);">Loading historical benchmark data from /api/summary...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Honest Limitations & Methodological Limits -->
+      <div class="limitations-list">
+        <h3>Methodological Boundaries & Limitations</h3>
+        <ul>
+          <li><strong>Phone GNSS Update Rate:</strong> In IO-VNBD Driver E recordings, raw smartphone GNSS coordinates refresh at ~0.1 Hz (~9–10 second intervals). The engine only processes genuinely new fixes.</li>
+          <li><strong>Target Drift Not Met:</strong> Consumer smartphone MEMS gyroscopes experience thermal drift that accumulates unconstrained over outages exceeding 40 seconds. Without map-matching or wheel odometry, the &lt;10% drift target is currently missed.</li>
+          <li><strong>Recorded Demonstration:</strong> This web interface connects to a local desktop Python SDK session processing recorded IO-VNBD sensors. It is NOT live phone hardware sensing.</li>
+          <li><strong>No Arbitrary Baselines:</strong> Comparison baselines (frozen position, last speed) are only defined for standard fixed-interval benchmark windows, not manual interactive toggling.</li>
+        </ul>
+      </div>
     </section>
   </main>
 
-  <dialog id="overview-dialog"><button class="dialog-close" id="close-overview">×</button><p class="kicker">REPRODUCIBLE EXPERIMENT</p><h2>What this replay demonstrates</h2><p>The page replays state produced by the real Continuum Python SDK on a held-out IO-VNBD recording. GNSS measurements were removed for the marked interval while IMU processing continued.</p><dl><div><dt>Experiment</dt><dd id="experiment">—</dd></div><div><dt>Execution</dt><dd id="execution">—</dd></div><div><dt>Selection rule</dt><dd id="selection-rule">—</dd></div><div><dt>Evidence boundary</dt><dd>Recorded replay; no claim of live phone inference</dd></div></dl><div class="dialog-actions"><a class="button-link" href="/docs">Open SDK documentation</a><a class="quiet-link" href="/mobile">Open synchronized driver view</a></div></dialog>
-  <div class="loading-overlay" id="loading"><div class="loader"></div><strong>Loading evaluation replay</strong><span>Reading local artifacts…</span></div>
   <script src="/static/app.js"></script>
 </body>
 </html>

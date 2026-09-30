@@ -45,6 +45,13 @@ Open:
 
 Studio and the driver view share one server-side replay clock. Play, pause, seek, replay speed, and restart controls operate on the same saved SDK trace. The interface clearly labels it as a recorded evaluation; it does not present browser playback as live phone inference.
 
+The new **interactive backend** is available separately at `/api/runtime`. It
+processes raw recorded sensor events through the running SDK, with actual GPS
+withholding/restoration, pause/step/restart, and session export. The existing HTML
+has not yet been connected to it. See [runtime API](docs/RUNTIME_API.md) and the
+[Antigravity frontend handoff](ANTIGRAVITY_FRONTEND_PROMPT.md). Restart the server
+after updating backend code. Neither mode uses live phone sensors.
+
 ## Python SDK quickstart
 
 ```python

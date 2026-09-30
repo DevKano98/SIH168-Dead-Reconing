@@ -1,29 +1,306 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07101c">
-  <title>Continuum Driver View</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080d16">
+  <title>Continuum IDR — Driver Navigation Readout</title>
   <link rel="stylesheet" href="/static/style.css">
   <style>
-    body{overflow:hidden;background:#07101c}.driver-shell{height:100dvh;position:relative;display:flex;flex-direction:column;background:#091522}.driver-top{position:absolute;z-index:5;top:max(16px,env(safe-area-inset-top));left:14px;right:14px;display:flex;align-items:center;justify-content:space-between}.driver-brand{display:flex;align-items:center;gap:9px;background:rgba(7,16,28,.86);border:1px solid var(--line);border-radius:11px;padding:8px 10px;backdrop-filter:blur(15px);font-size:11px;font-weight:750}.driver-brand .brand-mark{width:24px;height:24px;padding:5px}.driver-link{font-size:9px;text-decoration:none;color:#cbd8e5;background:rgba(7,16,28,.86);border:1px solid var(--line);border-radius:9px;padding:9px 10px;backdrop-filter:blur(15px)}
-    .driver-map{position:absolute;inset:0;width:100%;height:100%}.driver-state{position:absolute;z-index:5;top:max(72px,calc(env(safe-area-inset-top) + 62px));left:14px;right:14px;padding:13px 14px;border-radius:13px;background:rgba(8,17,29,.9);border:1px solid var(--line);backdrop-filter:blur(18px);display:flex;gap:11px;align-items:center}.driver-state>i{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 13px var(--green);flex:none}.driver-state.outage>i{background:var(--amber);box-shadow:0 0 13px var(--amber)}.driver-state.recovery>i{background:var(--blue);box-shadow:0 0 13px var(--blue)}.driver-state strong,.driver-state span{display:block}.driver-state strong{font-size:12px}.driver-state span{font-size:9px;color:var(--muted);margin-top:3px}
-    .driver-card{position:absolute;z-index:6;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));background:rgba(10,21,35,.95);border:1px solid var(--line);border-radius:18px;padding:17px;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,.42)}.driver-primary{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--line-soft)}.driver-speed span{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.driver-speed strong{font-size:42px;letter-spacing:-.06em}.driver-speed small{font-size:10px;color:var(--muted)}.driver-mode{text-align:right}.driver-mode span,.driver-mode strong{display:block}.driver-mode span{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}.driver-mode strong{font-size:12px;margin-top:4px;color:var(--green)}
-    .driver-metrics{display:grid;grid-template-columns:repeat(3,1fr);padding:14px 0}.driver-metrics>div{border-left:1px solid var(--line-soft);padding:0 10px}.driver-metrics>div:first-child{border-left:0;padding-left:0}.driver-metrics span,.driver-metrics strong{display:block}.driver-metrics span{font-size:8px;color:var(--faint);margin-bottom:4px}.driver-metrics strong{font-size:11px}.driver-controls{display:grid;grid-template-columns:1fr auto;gap:8px}.driver-controls button{border:1px solid #3597ef;background:#237acc;color:#fff;border-radius:9px;padding:11px;font-size:10px;font-weight:750;cursor:pointer}.driver-controls button:last-child{width:42px;background:#142338;border-color:var(--line)}.replay-disclosure{text-align:center;font-size:8px;color:var(--faint);margin:10px 0 0;line-height:1.4}
-    @media(min-width:700px){body{display:grid;place-items:center;background:radial-gradient(circle at top,#1a3455,#07101c 55%)}.driver-shell{width:430px;height:min(880px,94vh);border:1px solid var(--line);border-radius:28px;overflow:hidden;box-shadow:0 35px 100px rgba(0,0,0,.55)}}
+    body {
+      overflow-x: hidden;
+      background: #080d16;
+      margin: 0;
+      padding: 0;
+    }
+
+    @media (min-width: 600px) {
+      body {
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        background: radial-gradient(circle at 50% 20%, #15253d, #080d16 65%);
+        padding: 20px;
+      }
+    }
+
+    .mobile-frame {
+      width: 100%;
+      min-height: 100dvh;
+      background: #0b121e;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    @media (min-width: 600px) {
+      .mobile-frame {
+        width: 390px;
+        min-height: 820px;
+        height: 820px;
+        border: 2px solid #1e2d42;
+        border-radius: 36px;
+        overflow: hidden;
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
+      }
+    }
+
+    /* Top Bar */
+    .mobile-topbar {
+      padding: max(14px, env(safe-area-inset-top)) 16px 10px;
+      background: rgba(11, 18, 30, 0.94);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+    }
+
+    .mobile-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .mobile-brand span {
+      color: var(--blue);
+    }
+
+    .btn-return-studio {
+      font-size: 11px;
+      color: var(--text-muted);
+      border: 1px solid var(--line);
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--surface);
+    }
+
+    /* Trajectory Canvas */
+    .mobile-canvas-wrap {
+      flex: 1;
+      min-height: 240px;
+      position: relative;
+      background: #070c14;
+    }
+
+    #driver-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .canvas-overlay-mode {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 5;
+    }
+
+    /* Driver HUD Card */
+    .hud-card {
+      background: var(--surface);
+      border-top: 1px solid var(--line);
+      padding: 16px 18px max(18px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .hud-hero {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .hud-speed {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .hud-speed-val {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text-bright);
+      line-height: 1;
+    }
+
+    .hud-speed-unit {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .hud-compass {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .hud-compass-deg {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .hud-compass-cardinal {
+      font-size: 11px;
+      color: var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    .hud-metric-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line-subtle);
+      border-bottom: 1px solid var(--line-subtle);
+    }
+
+    .hud-metric-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hud-metric-item span {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-faint);
+    }
+
+    .hud-metric-item strong {
+      font-size: 12px;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    /* Shared Controls */
+    .hud-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 44px;
+      gap: 8px;
+    }
+
+    .hud-btn {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 10px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .hud-btn.primary {
+      background: var(--blue);
+      border-color: var(--blue-hover);
+      color: #ffffff;
+    }
+
+    .hud-btn.withheld {
+      background: var(--amber-faint);
+      border-color: var(--amber-border);
+      color: var(--amber);
+    }
+
+    .hud-btn.icon-only {
+      padding: 0;
+      font-size: 14px;
+    }
+
+    .shared-notice {
+      font-size: 9px;
+      color: var(--text-faint);
+      text-align: center;
+      line-height: 1.4;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
-  <main class="driver-shell">
-    <canvas class="driver-map" id="driver-map"></canvas>
-    <header class="driver-top"><div class="driver-brand"><span class="brand-mark"><i></i><i></i><i></i></span>Continuum</div><a class="driver-link" href="/">Open Studio ↗</a></header>
-    <section class="driver-state" id="driver-state"><i></i><div><strong id="driver-message">Preparing replay</strong><span id="driver-submessage">Waiting for the shared Studio session.</span></div></section>
-    <section class="driver-card">
-      <div class="driver-primary"><div class="driver-speed"><span>Estimated speed</span><strong id="driver-speed">—</strong> <small>KM/H</small></div><div class="driver-mode"><span>Navigation mode</span><strong id="driver-mode">—</strong></div></div>
-      <div class="driver-metrics"><div><span>Heading</span><strong id="driver-heading">—</strong></div><div><span>Uncertainty</span><strong id="driver-uncertainty">—</strong></div><div><span>GNSS</span><strong id="driver-gnss">—</strong></div></div>
-      <div class="driver-controls"><button id="driver-play">Start synchronized replay</button><button id="driver-reset" aria-label="Restart replay">↺</button></div>
-      <p class="replay-disclosure">Recorded IO-VNBD evaluation replay · estimator executed on the documented desktop runtime</p>
-    </section>
+  <main class="mobile-frame">
+    <!-- Header -->
+    <header class="mobile-topbar">
+      <div class="mobile-brand">
+        <div class="brand-mark" style="width:20px;height:20px;padding:3px;" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+        </div>
+        <div>Continuum <span>Driver</span></div>
+      </div>
+      <a class="btn-return-studio" href="/">Studio ↗</a>
+    </header>
+
+    <!-- Mini Metric Trajectory Map -->
+    <div class="mobile-canvas-wrap" id="driver-canvas-container">
+      <canvas id="driver-canvas"></canvas>
+      <div class="canvas-overlay-mode">
+        <span class="mode-pill uninitialized" id="driver-mode-pill">UNINITIALIZED</span>
+      </div>
+    </div>
+
+    <!-- HUD Readout -->
+    <div class="hud-card">
+      <div class="hud-hero">
+        <div class="hud-speed">
+          <span class="hud-speed-val" id="driver-speed">0</span>
+          <span class="hud-speed-unit">KM/H</span>
+        </div>
+        <div class="hud-compass">
+          <span class="hud-compass-deg" id="driver-heading">—°</span>
+          <span class="hud-compass-cardinal" id="driver-cardinal">HEADING</span>
+        </div>
+      </div>
+
+      <div class="hud-metric-row">
+        <div class="hud-metric-item">
+          <span>Uncertainty</span>
+          <strong id="driver-uncertainty">±— m</strong>
+        </div>
+        <div class="hud-metric-item">
+          <span>GPS Input</span>
+          <strong id="driver-gps-status">Delivering</strong>
+        </div>
+        <div class="hud-metric-item">
+          <span>Runtime Elapsed</span>
+          <strong id="driver-elapsed">00:00.0</strong>
+        </div>
+      </div>
+
+      <!-- Shared Control Strip -->
+      <div class="hud-controls">
+        <button class="hud-btn primary" id="driver-btn-play" type="button">
+          <span id="driver-play-icon">▶</span>
+          <span id="driver-play-label">Start Engine</span>
+        </button>
+
+        <button class="hud-btn" id="driver-btn-gnss" type="button">
+          <span>⌁</span>
+          <span id="driver-gnss-label">Withhold GPS</span>
+        </button>
+
+        <button class="hud-btn icon-only" id="driver-btn-restart" type="button" title="Restart Session">
+          ↺
+        </button>
+      </div>
+
+      <p class="shared-notice">
+        Recorded IO-VNBD Sensor Demo · Shared session synchronously reflected in Studio.
+      </p>
+    </div>
   </main>
+
   <script src="/static/mobile.js"></script>
 </body>
 </html>

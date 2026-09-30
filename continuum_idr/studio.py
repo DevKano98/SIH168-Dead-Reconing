@@ -86,7 +86,8 @@ def _read_json(path: Path, missing_message: str) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def create_app(artifacts: Path) -> FastAPI:
+def create_app(artifacts: Path, dataset: Path = Path("."),
+               model: Path = Path("models/motion_p0")) -> FastAPI:
     static = Path(__file__).parent / "studio_static"
     demo_path = artifacts / "demo_replay.json"
     sample_count = 0
@@ -97,9 +98,23 @@ def create_app(artifacts: Path) -> FastAPI:
             sample_count = 0
 
     session = ReplaySession(sample_count=sample_count)
+    runtime = None
+    runtime_lock = threading.Lock()
+
+    def get_runtime():
+        nonlocal runtime
+        with runtime_lock:
+            if runtime is None:
+                from .runtime import load_runtime
+                try:
+                    recording = json.loads(demo_path.read_text(encoding="utf-8"))
+                    runtime = load_runtime(dataset, model, recording)
+                except (OSError, ValueError, KeyError, TypeError) as exc:
+                    raise HTTPException(503, f"SDK runtime unavailable: {exc}") from exc
+            return runtime
     app = FastAPI(
         title="Continuum Studio",
-        version="0.2.0",
+        version="0.3.0",
         docs_url=None,
         redoc_url=None,
     )
@@ -136,6 +151,29 @@ def create_app(artifacts: Path) -> FastAPI:
     def get_session():
         return session.snapshot()
 
+    # /api/session remains the legacy saved-trace player for the existing UI.
+    # The new frontend must use /api/runtime exclusively for interactive output.
+    @app.get("/api/runtime")
+    def runtime_snapshot():
+        return JSONResponse(get_runtime().snapshot(), headers={"Cache-Control": "no-store"})
+
+    @app.post("/api/runtime/control")
+    def runtime_control(payload: dict[str, Any] = Body(...)):
+        try:
+            return JSONResponse(
+                get_runtime().control(payload.get("action"), payload.get("value")),
+                headers={"Cache-Control": "no-store"},
+            )
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.get("/api/runtime/export")
+    def runtime_export():
+        return JSONResponse(get_runtime().snapshot(), headers={
+            "Content-Disposition": 'attachment; filename="continuum-session.json"',
+            "Cache-Control": "no-store",
+        })
+
     @app.post("/api/session/control")
     def control_session(payload: dict[str, Any] = Body(...)):
         try:
@@ -149,13 +187,16 @@ def create_app(artifacts: Path) -> FastAPI:
             "status": "ready" if sample_count else "missing_artifacts",
             "replay_samples": sample_count,
             "artifacts": str(artifacts),
+            "runtime_status": "initialized" if runtime is not None else "not_initialized",
+            "legacy_ui": True,
         }
 
     return app
 
 
-def run(artifacts: Path, host: str, port: int) -> None:
-    uvicorn.run(create_app(artifacts), host=host, port=port)
+def run(artifacts: Path, host: str, port: int, dataset: Path = Path("."),
+        model: Path = Path("models/motion_p0")) -> None:
+    uvicorn.run(create_app(artifacts, dataset, model), host=host, port=port)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -163,6 +204,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--artifacts", default="artifacts/evaluation")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--dataset", default=".")
+    parser.add_argument("--model", default="models/motion_p0")
     args = parser.parse_args(argv)
-    run(Path(args.artifacts), args.host, args.port)
+    run(Path(args.artifacts), args.host, args.port, Path(args.dataset), Path(args.model))
     return 0

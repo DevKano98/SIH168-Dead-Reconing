@@ -43,6 +43,8 @@ def main(argv: list[str] | None = None) -> int:
     studio.add_argument("--artifacts", default="artifacts/evaluation")
     studio.add_argument("--host", default="127.0.0.1")
     studio.add_argument("--port", type=int, default=8000)
+    studio.add_argument("--dataset", default=".")
+    studio.add_argument("--model", default="models/motion_p0")
 
     export_cmd = sub.add_parser("export", help="export motion model to zero-dependency portable format")
     export_cmd.add_argument("--model", default="models/motion_p0")
@@ -103,7 +105,7 @@ def main(argv: list[str] | None = None) -> int:
         artifacts_path = Path(args.artifacts)
         if not (artifacts_path / "demo_replay.json").exists():
             print(f"[NOTE] Evaluation artifacts not found in '{args.artifacts}'. Run 'python -m continuum_idr.cli evaluate' before launching Studio.")
-        run(artifacts_path, args.host, args.port)
+        run(artifacts_path, args.host, args.port, Path(args.dataset), Path(args.model))
     elif args.command == "export":
         from .portable_model import PortableMotionBundle
 

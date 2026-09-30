@@ -1,82 +1,326 @@
-const driver = {
-  demo: null,
-  index: 0,
-  playing: false,
-};
+/**
+ * Continuum Driver View Controller
+ * Strictly connected to /api/runtime and /api/runtime/control.
+ * Synchronized to the SAME runtime session as Studio.
+ */
 
-const el = (id) => document.getElementById(id);
-const valid = (value) => Number.isFinite(Number(value));
-const fmt = (value, digits = 1) => valid(value) ? Number(value).toFixed(digits) : "—";
+(function () {
+  'use strict';
 
-async function initDriver() {
-  try {
-    const response = await fetch("/api/demo");
-    if (!response.ok) throw new Error("Replay unavailable");
-    driver.demo = await response.json();
-    renderDriver(0);
-    bindDriverControls();
-    window.setInterval(syncDriver, 120);
-    window.addEventListener("resize", () => renderDriver(driver.index));
-  } catch (error) {
-    el("driver-message").textContent = error.message;
-    el("driver-submessage").textContent = "Generate evaluation artifacts, then reload this view.";
+  const el = (id) => document.getElementById(id);
+  const isValidNum = (v) => v !== null && v !== undefined && Number.isFinite(Number(v));
+  const formatTime = (seconds) => {
+    if (!isValidNum(seconds)) return '00:00.0';
+    const s = Math.max(0, Number(seconds));
+    const mins = Math.floor(s / 60);
+    const secs = (s % 60).toFixed(1);
+    return `${String(mins).padStart(2, '0')}:${secs.padStart(4, '0')}`;
+  };
+
+  const cardinalFromDeg = (deg) => {
+    if (!isValidNum(deg)) return '—';
+    const norm = (deg % 360 + 360) % 360;
+    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'];
+    return dirs[Math.round(norm / 45)];
+  };
+
+  const state = {
+    session: null,
+    isControlInFlight: false,
+    pollTimer: null,
+  };
+
+  // --- Network API Client ---
+  async function fetchRuntime() {
+    const res = await fetch('/api/runtime', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store'
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
   }
-}
 
-async function sessionControl(action, value) {
-  const response = await fetch("/api/session/control", {
-    method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({action, value}),
-  });
-  if (response.ok) applySession(await response.json());
-}
+  async function postControl(action, value = null) {
+    if (state.isControlInFlight) return;
+    state.isControlInFlight = true;
 
-async function syncDriver() {
-  try {
-    const response = await fetch("/api/session", {cache:"no-store"});
-    if (response.ok) applySession(await response.json());
-  } catch (_) { /* Studio server status is already visible in the UI. */ }
-}
+    try {
+      const payload = { action };
+      if (value !== null && value !== undefined) payload.value = value;
+      const res = await fetch('/api/runtime/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const snap = await res.json();
+        applySnapshot(snap);
+      }
+    } catch (_) {
+      // Failed control will be retried on next poll
+    } finally {
+      state.isControlInFlight = false;
+    }
+  }
 
-function applySession(session) {
-  driver.playing = Boolean(session.playing);
-  el("driver-play").textContent = driver.playing ? "Pause synchronized replay" : "Start synchronized replay";
-  if (session.index !== driver.index) renderDriver(session.index);
-}
+  // --- Serial Polling Loop ---
+  async function pollLoop() {
+    if (state.isControlInFlight) {
+      state.pollTimer = setTimeout(pollLoop, 200);
+      return;
+    }
 
-function bindDriverControls() {
-  el("driver-play").addEventListener("click", () => sessionControl(driver.playing ? "pause" : "play"));
-  el("driver-reset").addEventListener("click", () => sessionControl("restart"));
-}
+    try {
+      const snap = await fetchRuntime();
+      applySnapshot(snap);
+    } catch (_) {
+      // Connection glitch; keep trying
+    } finally {
+      state.pollTimer = setTimeout(pollLoop, 250);
+    }
+  }
 
-function canvasSetup(canvas) {
-  const dpr = window.devicePixelRatio || 1, width = canvas.clientWidth, height = canvas.clientHeight;
-  canvas.width = Math.round(width*dpr); canvas.height = Math.round(height*dpr);
-  const context=canvas.getContext("2d");context.setTransform(dpr,0,0,dpr,0,0);return {context,width,height};
-}
+  // --- UI Update ---
+  function applySnapshot(snap) {
+    if (!snap) return;
+    state.session = snap;
 
-function driverExtents() {
-  const xs=[],ys=[];driver.demo.samples.forEach(s=>{if(valid(s.reference_east_m)&&valid(s.reference_north_m)){xs.push(Number(s.reference_east_m));ys.push(Number(s.reference_north_m));}});
-  return [Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)];
-}
+    const curr = snap.current || {};
+    const sdkState = curr.state || {};
 
-function drawDriverMap(index) {
-  const canvas=el("driver-map"),{context:ctx,width,height}=canvasSetup(canvas),[xmin,xmax,ymin,ymax]=driverExtents();
-  const spanX=Math.max(1,xmax-xmin),spanY=Math.max(1,ymax-ymin),scale=Math.min(width*.78/spanX,height*.64/spanY),toXY=(x,y)=>[width/2+(x-(xmin+xmax)/2)*scale,height*.42-(y-(ymin+ymax)/2)*scale];
-  ctx.fillStyle="#091522";ctx.fillRect(0,0,width,height);
-  ctx.strokeStyle="rgba(85,113,141,.11)";ctx.lineWidth=1;for(let x=-height;x<width+height;x+=55){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+height,height);ctx.stroke();}
-  drawPath(ctx,"reference_east_m","reference_north_m",driver.demo.samples.length,toXY,"#172a3c",20,[]);drawPath(ctx,"reference_east_m","reference_north_m",driver.demo.samples.length,toXY,"#344d65",2,[9,12]);drawPath(ctx,"east_m","north_m",index+1,toXY,"#4ca5ff",4,[]);
-  const s=driver.demo.samples[index],[x,y]=toXY(s.east_m,s.north_m),radius=Math.max(12,Math.min(70,(Number(s.uncertainty_m)||0)*scale));ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fillStyle=s.in_outage?"rgba(255,180,92,.13)":"rgba(76,165,255,.12)";ctx.fill();ctx.strokeStyle=s.in_outage?"rgba(255,180,92,.55)":"rgba(76,165,255,.5)";ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);
-  const heading=(Number(s.heading_deg)||0)*Math.PI/180;ctx.save();ctx.translate(x,y);ctx.rotate(heading);ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(10,11);ctx.lineTo(0,7);ctx.lineTo(-10,11);ctx.closePath();ctx.fillStyle="#fff";ctx.shadowColor="#4ca5ff";ctx.shadowBlur=18;ctx.fill();ctx.restore();
-  function drawPath(c,kx,ky,count,convert,color,lineWidth,dash){c.beginPath();c.setLineDash(dash);let start=false;driver.demo.samples.slice(0,count).forEach(p=>{if(!valid(p[kx])||!valid(p[ky]))return;const [px,py]=convert(p[kx],p[ky]);start?c.lineTo(px,py):(c.moveTo(px,py),start=true)});c.strokeStyle=color;c.lineWidth=lineWidth;c.lineCap="round";c.lineJoin="round";c.stroke();c.setLineDash([]);}
-}
+    // 1. Speed
+    const speedMps = sdkState.speed_mps;
+    el('driver-speed').textContent = isValidNum(speedMps) ? Math.round(speedMps * 3.6) : '0';
 
-function renderDriver(index) {
-  if(!driver.demo)return;driver.index=Math.max(0,Math.min(driver.demo.samples.length-1,Number(index)||0));const s=driver.demo.samples[driver.index];
-  const phase=s.in_outage?"outage":s.phase==="recovery"?"recovery":"aided",state=el("driver-state");state.className=`driver-state ${phase}`;
-  if(phase==="outage"){el("driver-message").textContent="Satellite positioning unavailable";el("driver-submessage").textContent="Continuum is estimating motion from the recorded IMU stream.";}
-  else if(phase==="recovery"){el("driver-message").textContent="Satellite positioning restored";el("driver-submessage").textContent="The estimator is validating returning location fixes.";}
-  else{el("driver-message").textContent="Positioning available";el("driver-submessage").textContent="GNSS and inertial estimates are running together.";}
-  el("driver-speed").textContent=fmt(Number(s.speed_mps)*3.6,0);el("driver-mode").textContent=s.mode.replaceAll("_"," ");el("driver-mode").style.color=phase==="outage"?"var(--amber)":phase==="recovery"?"var(--blue-2)":"var(--green)";el("driver-heading").textContent=`${fmt(s.heading_deg,0)}°`;el("driver-uncertainty").textContent=`±${fmt(s.uncertainty_m)} m`;el("driver-gnss").textContent=s.in_outage?"Withheld":s.gnss_delivered?"New fix":"Monitoring";drawDriverMap(driver.index);
-}
+    // 2. Heading & Cardinal Direction
+    const heading = sdkState.heading_deg;
+    el('driver-heading').textContent = isValidNum(heading) ? `${Math.round(heading)}°` : '—°';
+    el('driver-cardinal').textContent = cardinalFromDeg(heading);
 
-initDriver();
+    // 3. Tracking Mode Pill
+    const mode = sdkState.tracking_mode || 'UNINITIALIZED';
+    const pill = el('driver-mode-pill');
+    pill.textContent = mode.replace(/_/g, ' ');
+    if (mode === 'GNSS_AIDED') {
+      pill.className = 'mode-pill aided';
+    } else if (mode === 'DEAD_RECKONING') {
+      pill.className = 'mode-pill dead-reckoning';
+    } else if (mode === 'RECOVERING') {
+      pill.className = 'mode-pill recovering';
+    } else {
+      pill.className = 'mode-pill uninitialized';
+    }
+
+    // 4. Uncertainty
+    const uncert = sdkState.horizontal_uncertainty_m;
+    el('driver-uncertainty').textContent = isValidNum(uncert) ? `±${uncert.toFixed(1)} m` : '±— m';
+
+    // 5. GPS Status
+    const gpsStatusEl = el('driver-gps-status');
+    if (snap.gnss_enabled) {
+      gpsStatusEl.textContent = curr.gnss_delivered ? 'Delivered' : 'Delivering';
+      gpsStatusEl.style.color = 'var(--text)';
+    } else {
+      gpsStatusEl.textContent = 'Withheld (Outage)';
+      gpsStatusEl.style.color = 'var(--amber)';
+    }
+
+    // 6. Elapsed Time
+    el('driver-elapsed').textContent = formatTime(curr.elapsed_s);
+
+    // 7. Shared Control Buttons
+    const playBtn = el('driver-btn-play');
+    const playIcon = el('driver-play-icon');
+    const playLabel = el('driver-play-label');
+
+    if (snap.completed) {
+      playLabel.textContent = 'Completed';
+      playIcon.textContent = '✓';
+      playBtn.disabled = true;
+    } else if (snap.playing) {
+      playLabel.textContent = 'Pause';
+      playIcon.textContent = '⏸';
+      playBtn.disabled = false;
+    } else {
+      playLabel.textContent = snap.index > 0 ? 'Resume' : 'Start';
+      playIcon.textContent = '▶';
+      playBtn.disabled = false;
+    }
+
+    const gnssBtn = el('driver-btn-gnss');
+    const gnssLabel = el('driver-gnss-label');
+    if (snap.gnss_enabled) {
+      gnssBtn.className = 'hud-btn';
+      gnssLabel.textContent = 'Withhold GPS';
+    } else {
+      gnssBtn.className = 'hud-btn withheld';
+      gnssLabel.textContent = 'Restore GPS';
+    }
+
+    // 8. Render Canvas Map
+    drawDriverMap();
+  }
+
+  // --- Mini Metric Map Canvas ---
+  function drawDriverMap() {
+    const canvas = el('driver-canvas');
+    if (!canvas || !state.session) return;
+
+    const samples = state.session.samples || [];
+    if (samples.length === 0) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+    }
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Dark background
+    ctx.fillStyle = '#070c14';
+    ctx.fillRect(0, 0, width, height);
+
+    // Current position
+    const curr = state.session.current;
+    if (!curr || !isValidNum(curr.east_m) || !isValidNum(curr.north_m)) return;
+
+    const curE = curr.east_m;
+    const curN = curr.north_m;
+    const heading = (curr.state?.heading_deg || 0) * Math.PI / 180;
+
+    // Fixed zoom scale: roughly 1.5 pixels per metre
+    const scale = 1.6;
+    const cx = width / 2;
+    const cy = height * 0.55;
+
+    const toX = (e) => cx + (e - curE) * scale;
+    const toY = (n) => cy - (n - curN) * scale;
+
+    // Draw background metric grid
+    ctx.strokeStyle = 'rgba(30, 45, 66, 0.4)';
+    ctx.lineWidth = 1;
+    for (let x = (cx % 50); x < width; x += 50) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = (cy % 50); y < height; y += 50) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    // Draw reference line
+    ctx.beginPath();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 2;
+    let refStarted = false;
+    samples.forEach(s => {
+      if (isValidNum(s.reference_east_m) && isValidNum(s.reference_north_m)) {
+        const sx = toX(s.reference_east_m);
+        const sy = toY(s.reference_north_m);
+        if (!refStarted) {
+          ctx.moveTo(sx, sy);
+          refStarted = true;
+        } else {
+          ctx.lineTo(sx, sy);
+        }
+      }
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw estimated path
+    ctx.beginPath();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 3;
+    let estStarted = false;
+    samples.forEach(s => {
+      if (isValidNum(s.east_m) && isValidNum(s.north_m)) {
+        const sx = toX(s.east_m);
+        const sy = toY(s.north_m);
+        if (!estStarted) {
+          ctx.moveTo(sx, sy);
+          estStarted = true;
+        } else {
+          ctx.lineTo(sx, sy);
+        }
+      }
+    });
+    ctx.stroke();
+
+    // Draw uncertainty circle around vehicle
+    const uncertaintyM = curr.state?.horizontal_uncertainty_m || 5.0;
+    const radiusPx = Math.min(80, uncertaintyM * scale);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radiusPx, 0, Math.PI * 2);
+    ctx.fillStyle = curr.gnss_withheld ? 'rgba(245, 158, 11, 0.14)' : 'rgba(59, 130, 246, 0.12)';
+    ctx.fill();
+    ctx.strokeStyle = curr.gnss_withheld ? 'rgba(245, 158, 11, 0.6)' : 'rgba(59, 130, 246, 0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Draw vehicle marker
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(heading);
+
+    ctx.beginPath();
+    ctx.arc(0, 0, 9, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -16);
+    ctx.lineTo(9, 9);
+    ctx.lineTo(0, 5);
+    ctx.lineTo(-9, 9);
+    ctx.closePath();
+    ctx.fillStyle = curr.gnss_withheld ? '#f59e0b' : '#3b82f6';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // --- Bind Controls ---
+  function bindControls() {
+    el('driver-btn-play').addEventListener('click', () => {
+      if (!state.session || state.session.completed) return;
+      postControl(state.session.playing ? 'pause' : 'play');
+    });
+
+    el('driver-btn-gnss').addEventListener('click', () => {
+      if (!state.session) return;
+      postControl('gnss', !state.session.gnss_enabled);
+    });
+
+    el('driver-btn-restart').addEventListener('click', () => {
+      postControl('restart');
+    });
+
+    window.addEventListener('resize', drawDriverMap);
+  }
+
+  // --- Initialize ---
+  function init() {
+    bindControls();
+    fetchRuntime().then(applySnapshot).catch(() => {});
+    pollLoop();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
