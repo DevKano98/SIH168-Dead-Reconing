@@ -38,10 +38,11 @@ When a vehicle enters **tunnels, elevated flyovers, underground parking basement
 4. [Empirical Benchmark Evidence (IO-VNBD Dataset)](#4-empirical-benchmark-evidence-io-vnbd-dataset)
 5. [Indian Road Challenges & Domain Adaptation](#5-indian-road-challenges--domain-adaptation)
 6. [Quickstart & Verification Guide](#6-quickstart--verification-guide)
-   - [6.1 Python SDK & CLI](#61-python-sdk--cli)
-   - [6.2 Launch Continuum Studio](#62-launch-continuum-studio)
-   - [6.3 Build & Install Android Mobile App](#63-build--install-android-mobile-app)
-   - [6.4 Link Google Maps via Mock Location Provider](#64-link-google-maps-via-mock-location-provider)
+   - [6.1 Python SDK & CLI — Commands that work from clone](#61-python-sdk--cli--commands-that-work-from-clone)
+   - [6.2 Commands that require the IO-VNBD dataset](#62-commands-that-require-the-io-vnbd-dataset)
+   - [6.3 Launch Continuum Studio](#63-launch-continuum-studio)
+   - [6.4 Build & Install Android Mobile App](#64-build--install-android-mobile-app)
+   - [6.5 Link Google Maps via Mock Location Provider](#65-link-google-maps-via-mock-location-provider)
 7. [Repository Structure](#7-repository-structure)
 8. [Complete Documentation Suite (`docs/`)](#8-complete-documentation-suite-docs)
 
@@ -500,7 +501,39 @@ graph TD
 
 ## 6. Quickstart & Verification Guide
 
-### 6.1 Python SDK & CLI
+> [!IMPORTANT]
+> **What works from a fresh `git clone` (no external data needed):**
+> All items marked ✅ below run fully out-of-the-box with the bundled model weights and synthetic data.
+> Items marked ⚠️ additionally require the private **IO-VNBD synchronized dataset** (not redistributable — see below).
+
+| Command / Feature | Works from Clone? | Notes |
+| :--- | :---: | :--- |
+| `pytest tests/` (122 tests) | ✅ | Uses bundled portable model & synthetic fixtures |
+| `idr stress` | ✅ | Uses bundled `models/motion_p0` weights |
+| `idr mobile-demo` | ✅ | Simulates full GNSS_HEALTHY → FALLBACK → RECOVERING lifecycle |
+| `idr profile` | ✅ | Benchmarks CAR / MOTORCYCLE / PARKING dynamics profiles |
+| `idr export` | ✅ | Exports portable JSON trees from bundled joblib weights |
+| `idr synthetic` | ✅ | Generates 17-category synthetic Indian-road JSONL dataset |
+| `idr generate-synthetic-dataset` | ✅ | Generates full structured 17-scenario benchmark |
+| `idr mobile-demo` | ✅ | Full fallback lifecycle demo with Python SDK |
+| `idr run-experiments` | ✅ | Runs 5 candidate estimators on synthetic scenarios |
+| `idr studio` | ✅ | Serves Continuum Studio on `:8000` — backed by **replay artifact** `artifacts/evaluation/demo_replay.json` |
+| Android APK build | ✅ | Bundles `motion_portable.json` + `sample_road_pack.json` — no internet needed |
+| `idr audit --dataset .` | ⚠️ | Requires local path to the synchronized IO-VNBD CSV folders |
+| `idr train --dataset .` | ⚠️ | Requires synchronized IO-VNBD `S-*.csv` / `V-*.csv` pairs |
+| `idr evaluate --dataset . --model ...` | ⚠️ | Requires the same dataset for held-out trip replay |
+| Google Maps mock location | ⚠️ | Requires Android device + Developer Options + physical trip |
+| BLE V2V mesh | ⚠️ | Requires two Android devices in proximity |
+
+> [!NOTE]
+> **About the IO-VNBD Dataset:** The raw synchronized smartphone + vehicle (`S-*.csv` / `V-*.csv`) recordings are not redistributable with the repo. The bundled `models/motion_p0/` weights (`speed_model.joblib`, `stop_model.joblib`) were trained on this dataset and are committed to the repository, so all inference, export, and testing commands work without it.
+
+> [!NOTE]
+> **About Continuum Studio:** The Studio web dashboard (`idr studio`) streams from a pre-recorded evaluation replay (`artifacts/evaluation/demo_replay.json`). Play/Pause/Step/GNSS-toggle controls operate on this replay. The dashboard is a simulation cockpit and interactive prototype viewer — it does not process raw live sensor streams.
+
+---
+
+### 6.1 Python SDK & CLI — Commands that work from clone
 
 ```powershell
 # 1. Setup virtual environment
@@ -508,36 +541,62 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e .
 
-# 2. Run verification test suite (122 tests)
+# 2. Run full verification test suite (122/122 tests, uses bundled model)
 python -m pytest tests/ -q
 
-# 3. Retrain and evaluate models
-python -m continuum_idr.cli train --dataset . --output models/motion_p0
-python -m continuum_idr.cli evaluate --dataset . --model models/motion_p0 --output artifacts/evaluation
+# 3. Synthetic Indian-road benchmark (no dataset needed)
+python -m continuum_idr.cli generate-synthetic-dataset --output synthetic_output
+
+# 4. Fallback lifecycle demo (no dataset needed)
+python -m continuum_idr.cli mobile-demo
+
+# 5. GNSS fault injection stress tests (uses bundled model)
+python -m continuum_idr.cli stress --model models/motion_p0
+
+# 6. Export portable JSON model (uses bundled model)
+python -m continuum_idr.cli export --model models/motion_p0 --output portable_export
+
+# 7. Run candidate estimator comparison (synthetic scenarios)
+python -m continuum_idr.cli run-experiments --model models/motion_p0
 ```
 
-### 6.2 Launch Continuum Studio
+### 6.2 Commands that require the IO-VNBD dataset
+
+These commands require the private synchronized dataset on your local machine:
+
+```powershell
+# Audit dataset pairs (needs: Synchronised V abd S datasets/ folder)
+python -m continuum_idr.cli audit --dataset /path/to/iovnbd/root
+
+# Retrain models from raw CSV pairs
+python -m continuum_idr.cli train --dataset /path/to/iovnbd/root --output models/motion_p0
+
+# Run held-out GNSS outage evaluation
+python -m continuum_idr.cli evaluate --dataset /path/to/iovnbd/root --model models/motion_p0 --output artifacts/evaluation
+```
+
+### 6.3 Launch Continuum Studio
 
 ```powershell
 python -m continuum_idr.cli studio --host 127.0.0.1 --port 8000
 ```
-Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser.
+Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser. The dashboard streams from the bundled evaluation replay artifact.
 
-### 6.3 Build & Install Android Mobile App
+### 6.4 Build & Install Android Mobile App
 
 ```powershell
 cd android
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat assembleDebug
 ```
-Output APK: [`android/app/build/outputs/apk/debug/app-debug.apk`](file:///d:/iovnbd/IO-VNBD/android/app/build/outputs/apk/debug/app-debug.apk).
+Output APK: [`android/app/build/outputs/apk/debug/app-debug.apk`](android/app/build/outputs/apk/debug/app-debug.apk).
 
 Install via ADB:
 ```powershell
 adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### 6.4 Link Google Maps via Mock Location Provider
+### 6.5 Link Google Maps via Mock Location Provider
 
 1. On your phone: **Settings** → **System** → **Developer options** → **Select mock location app** → choose **Continuum IDR**.
 2. Open **Continuum IDR** → Tap **ENABLE MOCK GPS**.
