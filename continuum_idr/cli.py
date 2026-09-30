@@ -66,6 +66,29 @@ def main(argv: list[str] | None = None) -> int:
     visuals_cmd = sub.add_parser("visuals", help="generate comprehensive presentation graphs and visualizations")
     visuals_cmd.add_argument("--artifacts", default="artifacts/evaluation")
 
+    convert_map_cmd = sub.add_parser("convert-map-pack", help="convert GeoJSON or generate regional road pack")
+    convert_map_cmd.add_argument("--input", default="indian_corridor", help="Path to GeoJSON file, or preset name: 'indian_corridor', 'synthetic'")
+    convert_map_cmd.add_argument("--output", default="android/app/src/main/assets/sample_road_pack.json", help="Path to write JSON pack")
+    convert_map_cmd.add_argument("--name", default="Electronic City Corridor", help="Name of the road pack")
+    convert_map_cmd.add_argument("--origin-lat", type=float, default=None)
+    convert_map_cmd.add_argument("--origin-lon", type=float, default=None)
+
+    synthetic_cmd = sub.add_parser("synthetic", help="generate deterministic synthetic evaluation scenarios")
+    synthetic_cmd.add_argument("--scenario", default="tunnel_total_gnss_blackout_60s", help="Scenario ID or 'list'")
+    synthetic_cmd.add_argument("--duration", type=float, default=None, help="Duration in seconds")
+    synthetic_cmd.add_argument("--output", default=None, help="Output JSONL trip file")
+
+    val_phone_cmd = sub.add_parser("validate-phone-log", help="validate and audit on-device recorded JSONL trip log")
+    val_phone_cmd.add_argument("log_file", help="Path to JSONL trip log")
+
+    rep_phone_cmd = sub.add_parser("phone-report", help="generate markdown validation report from phone log")
+    rep_phone_cmd.add_argument("log_file", help="Path to JSONL trip log")
+    rep_phone_cmd.add_argument("--output", default=None, help="Path to write markdown report")
+
+    traffic_gw_cmd = sub.add_parser("traffic-gateway", help="run localized cooperative V2X traffic gateway")
+    traffic_gw_cmd.add_argument("--host", default="127.0.0.1", help="Gateway bind host")
+    traffic_gw_cmd.add_argument("--port", type=int, default=8080, help="Gateway bind port")
+
     args = parser.parse_args(argv)
     if args.command == "audit":
         report = audit_pairs(args.dataset)
@@ -245,6 +268,70 @@ def main(argv: list[str] | None = None) -> int:
             "plots_generated": len(created),
             "files": created,
         }, indent=2))
+    elif args.command == "convert-map-pack":
+        from .maps import RoadGraph, build_road_graph_from_geojson
+
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        if args.input == "indian_corridor":
+            graph = RoadGraph.create_indian_urban_corridor(
+                origin_lat=args.origin_lat or 12.8450,
+                origin_lon=args.origin_lon or 77.6600,
+            )
+        elif args.input == "synthetic":
+            graph = RoadGraph.create_synthetic_corridor(
+                origin_lat=args.origin_lat or 52.4,
+                origin_lon=args.origin_lon or -1.5,
+            )
+        else:
+            graph = build_road_graph_from_geojson(
+                args.input,
+                origin_lat=args.origin_lat,
+                origin_lon=args.origin_lon,
+                name=args.name,
+            )
+        pack_json = graph.to_pack_json(name=args.name)
+        out_path.write_text(pack_json, encoding="utf-8")
+        print(json.dumps({
+            "status": "success",
+            "output": str(out_path),
+            "nodes": len(graph.nodes),
+            "segments": len(graph.segments),
+            "file_size_bytes": len(pack_json.encode("utf-8")),
+        }, indent=2))
+    elif args.command == "synthetic":
+        from .synthetic import export_scenario_jsonl, generate_scenario, list_scenarios
+
+        if args.scenario == "list":
+            print(json.dumps(list_scenarios(), indent=2))
+            return 0
+
+        res = generate_scenario(args.scenario, duration_s=args.duration)
+        summary = res.to_summary()
+
+        if args.output:
+            out_p = export_scenario_jsonl(res, args.output)
+            summary["exported_jsonl"] = str(out_p)
+
+        print(json.dumps(summary, indent=2))
+    elif args.command == "validate-phone-log":
+        from .phone_data import PhoneLogParser
+
+        parser_inst = PhoneLogParser(args.log_file)
+        audit = parser_inst.audit()
+        print(json.dumps(audit.to_dict(), indent=2))
+    elif args.command == "phone-report":
+        from .phone_data import generate_markdown_validation_report
+
+        report_md = generate_markdown_validation_report(args.log_file, args.output)
+        if not args.output:
+            print(report_md)
+        else:
+            print(f"Report written to {args.output}")
+    elif args.command == "traffic-gateway":
+        from .traffic_gateway import run_gateway
+
+        run_gateway(host=args.host, port=args.port)
     return 0
 
 

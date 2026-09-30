@@ -157,6 +157,84 @@ class RoadGraph:
 
         return candidates
 
+    def to_pack_dict(self, name: str = "road_pack") -> dict[str, Any]:
+        """Serialize road graph to lightweight, zero-dependency pack dictionary."""
+        origin_lat = 0.0
+        origin_lon = 0.0
+        if self.reference_frame is not None:
+            origin_lat = self.reference_frame.latitude0_deg
+            origin_lon = self.reference_frame.longitude0_deg
+        elif self.nodes:
+            first_node = next(iter(self.nodes.values()))
+            origin_lat = first_node.latitude_deg
+            origin_lon = first_node.longitude_deg
+
+        return {
+            "format_version": "1.0.0",
+            "name": name,
+            "cell_size_m": float(self.cell_size_m),
+            "origin_lat": float(origin_lat),
+            "origin_lon": float(origin_lon),
+            "nodes": [
+                {
+                    "id": n.node_id,
+                    "lat": round(float(n.latitude_deg), 7),
+                    "lon": round(float(n.longitude_deg), 7),
+                    "east_m": round(float(n.east_m), 2),
+                    "north_m": round(float(n.north_m), 2),
+                }
+                for n in self.nodes.values()
+            ],
+            "segments": [
+                {
+                    "id": s.segment_id,
+                    "from_node": s.from_node,
+                    "to_node": s.to_node,
+                    "heading_deg": round(float(s.heading_deg), 2),
+                    "length_m": round(float(s.length_m), 2),
+                    "speed_limit_mps": round(float(s.speed_limit_mps), 2),
+                    "lane_count": int(s.lane_count),
+                    "road_type": str(s.road_type),
+                    "one_way": bool(s.one_way),
+                }
+                for s in self.segments.values()
+            ],
+        }
+
+    def to_pack_json(self, name: str = "road_pack", indent: int = 2) -> str:
+        import json
+        return json.dumps(self.to_pack_dict(name), indent=indent)
+
+    @classmethod
+    def from_pack_dict(cls, data: dict[str, Any]) -> "RoadGraph":
+        """Deserialize road graph from pack dictionary."""
+        ref = LocalFrame(float(data["origin_lat"]), float(data["origin_lon"]))
+        graph = cls(cell_size_m=float(data.get("cell_size_m", 100.0)), reference_frame=ref)
+        for nd in data.get("nodes", []):
+            graph.add_node(
+                node_id=str(nd["id"]),
+                lat=float(nd["lat"]),
+                lon=float(nd["lon"]),
+                east=float(nd.get("east_m", 0.0)),
+                north=float(nd.get("north_m", 0.0)),
+            )
+        for sg in data.get("segments", []):
+            graph.add_segment(
+                segment_id=str(sg["id"]),
+                from_node_id=str(sg["from_node"]),
+                to_node_id=str(sg["to_node"]),
+                speed_limit_mps=float(sg.get("speed_limit_mps", 20.0)),
+                lane_count=int(sg.get("lane_count", 1)),
+                road_type=str(sg.get("road_type", "primary")),
+                one_way=bool(sg.get("one_way", False)),
+            )
+        return graph
+
+    @classmethod
+    def from_pack_json(cls, json_str: str) -> "RoadGraph":
+        import json
+        return cls.from_pack_dict(json.loads(json_str))
+
     @classmethod
     def create_synthetic_corridor(
         cls,
@@ -204,6 +282,205 @@ class RoadGraph:
                 )
 
         return graph
+
+    @classmethod
+    def create_indian_urban_corridor(
+        cls,
+        origin_lat: float = 12.8450,
+        origin_lon: float = 77.6600,
+        length_m: float = 4000.0,
+    ) -> "RoadGraph":
+        """Build an Indian urban expressway corridor (Electronic City / Hosur Road model).
+        
+        Features:
+        - Elevated Expressway (straight, high speed limit 80 km/h)
+        - Surface Main Arterial Road (underneath / parallel, 50 km/h, junctions)
+        - Parallel Service Road (narrow, 30 km/h)
+        - Off-ramp / On-ramp connecting expressway and surface
+        - Cross-junction intersections
+        """
+        frame = LocalFrame(origin_lat, origin_lon)
+        graph = cls(cell_size_m=100.0, reference_frame=frame)
+
+        step = 200.0
+        steps = int(length_m / step)
+
+        # 1. Elevated Expressway (runs North-South, heading 0 deg: north increases)
+        for i in range(steps + 1):
+            north = i * step
+            east = 0.0
+            lat, lon = frame.to_wgs84(east, north)
+            graph.add_node(f"expressway_{i}", lat, lon, east, north)
+            if i > 0:
+                graph.add_segment(
+                    segment_id=f"seg_exp_{i-1}_{i}",
+                    from_node_id=f"expressway_{i-1}",
+                    to_node_id=f"expressway_{i}",
+                    speed_limit_mps=22.2,  # 80 km/h
+                    lane_count=3,
+                    road_type="motorway",
+                    one_way=True,
+                )
+
+        # 2. Surface Main Arterial (offset 15m East, heading North)
+        for i in range(steps + 1):
+            north = i * step
+            east = 15.0
+            lat, lon = frame.to_wgs84(east, north)
+            graph.add_node(f"surface_{i}", lat, lon, east, north)
+            if i > 0:
+                graph.add_segment(
+                    segment_id=f"seg_surf_{i-1}_{i}",
+                    from_node_id=f"surface_{i-1}",
+                    to_node_id=f"surface_{i}",
+                    speed_limit_mps=13.9,  # 50 km/h
+                    lane_count=2,
+                    road_type="primary",
+                    one_way=False,
+                )
+
+        # 3. Parallel Service Road (offset 35m East, heading North)
+        for i in range(steps + 1):
+            north = i * step
+            east = 35.0
+            lat, lon = frame.to_wgs84(east, north)
+            graph.add_node(f"service_{i}", lat, lon, east, north)
+            if i > 0:
+                graph.add_segment(
+                    segment_id=f"seg_serv_{i-1}_{i}",
+                    from_node_id=f"service_{i-1}",
+                    to_node_id=f"service_{i}",
+                    speed_limit_mps=8.3,  # 30 km/h
+                    lane_count=1,
+                    road_type="service",
+                    one_way=False,
+                )
+
+        # 4. Off-ramp from Expressway to Surface at step 5 (1000m)
+        if steps >= 6:
+            graph.add_segment(
+                segment_id="ramp_exp_to_surf_1000m",
+                from_node_id="expressway_5",
+                to_node_id="surface_6",
+                speed_limit_mps=11.1,  # 40 km/h
+                lane_count=1,
+                road_type="primary_link",
+                one_way=True,
+            )
+
+        # 5. Cross-road junction at step 10 (2000m) running East-West (heading 90 deg)
+        if steps >= 10:
+            for cx, ce in [("cross_w", -300.0), ("cross_e", 300.0)]:
+                lat, lon = frame.to_wgs84(ce, 2000.0)
+                graph.add_node(cx, lat, lon, ce, 2000.0)
+            graph.add_segment(
+                segment_id="cross_w_to_surface",
+                from_node_id="cross_w",
+                to_node_id="surface_10",
+                speed_limit_mps=11.1,
+                lane_count=2,
+                road_type="secondary",
+                one_way=False,
+            )
+            graph.add_segment(
+                segment_id="surface_to_cross_e",
+                from_node_id="surface_10",
+                to_node_id="cross_e",
+                speed_limit_mps=11.1,
+                lane_count=2,
+                road_type="secondary",
+                one_way=False,
+            )
+
+        return graph
+
+
+def build_road_graph_from_geojson(
+    geojson_source: dict[str, Any] | str | Path,
+    origin_lat: float | None = None,
+    origin_lon: float | None = None,
+    name: str = "geojson_roads",
+    cell_size_m: float = 100.0,
+) -> RoadGraph:
+    """Construct a RoadGraph from GeoJSON FeatureCollection of LineStrings."""
+    import json
+
+    if isinstance(geojson_source, (str, Path)):
+        p = Path(geojson_source)
+        if p.exists():
+            data = json.loads(p.read_text(encoding="utf-8"))
+        else:
+            data = json.loads(str(geojson_source))
+    else:
+        data = geojson_source
+
+    features = data.get("features", [])
+    if not features and data.get("type") == "LineString":
+        features = [{"type": "Feature", "geometry": data, "properties": {}}]
+
+    # Discover origin if not provided
+    if origin_lat is None or origin_lon is None:
+        for f in features:
+            geom = f.get("geometry", {})
+            coords = geom.get("coordinates", [])
+            if coords:
+                if geom.get("type") == "LineString":
+                    origin_lon, origin_lat = coords[0][0], coords[0][1]
+                    break
+                elif geom.get("type") == "MultiLineString" and coords[0]:
+                    origin_lon, origin_lat = coords[0][0][0], coords[0][0][1]
+                    break
+        if origin_lat is None or origin_lon is None:
+            origin_lat, origin_lon = 0.0, 0.0
+
+    frame = LocalFrame(origin_lat, origin_lon)
+    graph = RoadGraph(cell_size_m=cell_size_m, reference_frame=frame)
+
+    node_idx = 0
+    seg_idx = 0
+
+    for f_idx, feat in enumerate(features):
+        geom = feat.get("geometry", {})
+        props = feat.get("properties", {})
+        gtype = geom.get("type", "")
+        coord_lines: list[list[list[float]]] = []
+        if gtype == "LineString":
+            coord_lines.append(geom.get("coordinates", []))
+        elif gtype == "MultiLineString":
+            coord_lines.extend(geom.get("coordinates", []))
+
+        road_type = props.get("highway", props.get("road_type", "primary"))
+        speed_limit = float(props.get("maxspeed", props.get("speed_limit_mps", 15.0)))
+        lane_count = int(props.get("lanes", props.get("lane_count", 1)))
+        one_way = bool(props.get("oneway", props.get("one_way", False)))
+
+        for line in coord_lines:
+            prev_node_id = None
+            for pt in line:
+                lon, lat = float(pt[0]), float(pt[1])
+                e, n = frame.to_enu(lat, lon)
+                cur_node_id = f"node_{node_idx}"
+                node_idx += 1
+                graph.add_node(cur_node_id, lat, lon, e, n)
+
+                if prev_node_id is not None:
+                    # Prevent zero-length segments
+                    pn = graph.nodes[prev_node_id]
+                    if math.hypot(e - pn.east_m, n - pn.north_m) >= 0.5:
+                        seg_id = f"seg_{f_idx}_{seg_idx}"
+                        seg_idx += 1
+                        graph.add_segment(
+                            segment_id=seg_id,
+                            from_node_id=prev_node_id,
+                            to_node_id=cur_node_id,
+                            speed_limit_mps=speed_limit,
+                            lane_count=lane_count,
+                            road_type=road_type,
+                            one_way=one_way,
+                        )
+                prev_node_id = cur_node_id
+
+    return graph
 
 
 class CandidateTracker:

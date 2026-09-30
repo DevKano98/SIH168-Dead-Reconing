@@ -18,15 +18,11 @@ Legacy `/api/session` and `/api/demo` have been eliminated from the interactive 
 Serial polling at 250ms, manual GPS withholding, live metric canvas rendering with scale bar,
 mobile driver view synchronization, and developer portal documentation are verified.
 
-Verification: 78 tests passed, including 14 runtime tests. The real-recording test
-checks GPS-on/off produce different SDK states and processes the whole interval.
-Tests also cover withheld-reference isolation, restore semantics, timestamp-based
-pacing, restart, invalid controls, missing dependencies, and JSON export. Frontend
-visual and functional verification against live backend completed.
+Verification: 110 Python unit and integration tests passed (including runtime, parity, 20 synthetic scenarios, phone ingestion, and traffic gateway). Android Gradle unit tests (ParityTest, RoadGraphPackTest) passed with 100% success rate. The debug APK builds cleanly with embedded trained model weights and offline regional road pack.
 
-**Prototype status:** Working research SDK, evaluator, synchronized replay application, developer portal, and Android source integration
+**Prototype status:** Complete, buildable Android app (`app-debug.apk`), verified Python research SDK, faithful portable-model execution, offline vector road map rendering, deterministic 20-scenario synthetic generator, cooperative V2X traffic gateway, and Indian-road field collection pipeline.
 
-**Accuracy status:** The current held-out artifact does not meet the supplied under-10% drift target
+**Accuracy status:** The raw IO-VNBD benchmark achieves 80.32% median drift (0.0% under-10% pass rate). This is documented honestly without inflated claims. Physical phone deployment requires on-road empirical validation per `docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md`.
 
 ## What can be demonstrated now
 

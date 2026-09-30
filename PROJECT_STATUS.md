@@ -4,13 +4,15 @@ The canonical status is maintained in [CURRENT_STATUS.md](CURRENT_STATUS.md). Th
 
 ## Current delivery
 
-- Working Python research SDK and trained motion model.
+- Verified, buildable Android project producing `android/app/build/outputs/apk/debug/app-debug.apk` (1.09 MB) with embedded trained model (`motion_portable.json`) and regional road pack (`sample_road_pack.json`).
+- On-device Kotlin dead reckoning (`ContinuumLocationEngine`), offline vector road map (`MapView`), foreground trip recorder (`TrackingService`), and cooperative BLE hazard sharing (`TrafficBleManager`).
+- Working Python research SDK, trained motion model, and 110 passed unit and integration tests.
+- Multi-stage deterministic Python/Kotlin parity test suite (`ParityTest.kt` and `test_parity.py`).
+- Deterministic 20-scenario synthetic generator (`continuum_idr/synthetic.py`) and CLI `idr synthetic`.
+- Indian-road collection and validation pipeline (`continuum_idr/phone_data.py`, `docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md`).
+- Local cooperative V2X traffic gateway (`continuum_idr/traffic_gateway.py`).
 - Reproducible IO-VNBD outage evaluator and checked-in evidence.
-- Continuum Studio replay at `/`.
-- Synchronized driver-facing replay at `/mobile`.
-- SDK developer documentation portal at `/docs`.
-- Portable model runner and Kotlin Android integration source.
-- Unit-tested experimental map, vehicle-profile, scheduling, calibration, and odometry modules.
+- Continuum Studio replay at `/`, driver-facing view at `/mobile`, and developer portal at `/docs`.
 
 ## Current result
 

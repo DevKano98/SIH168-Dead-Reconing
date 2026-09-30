@@ -94,6 +94,11 @@ class PortableMotionBundle:
     def predict(self, imu_window: np.ndarray) -> MotionPrediction:
         """Predict speed and stop probability from a 20-sample causal IMU window."""
         raw_features = summarize_window(imu_window)
+        return self.predict_features(raw_features)
+
+    def predict_features(self, raw_features: np.ndarray) -> MotionPrediction:
+        """Predict speed and stop probability directly from a 42-element feature vector."""
+        raw_features = np.asarray(raw_features, dtype=float)
         norm_features = (raw_features - self.feature_means) / np.maximum(self.feature_scales, 1e-6)
 
         # 1. Speed prediction

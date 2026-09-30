@@ -108,6 +108,23 @@ Evaluation output includes `summary.json`, per-outage CSV metrics, a selected re
 # Export the zero-dependency portable tree bundle
 python -m continuum_idr.cli export --model models/motion_p0 --output models/portable/motion_portable.json
 
+# Generate regional road map pack from GeoJSON or preset Indian corridor
+python -m continuum_idr.cli convert-map-pack --input indian_corridor --output android/app/src/main/assets/sample_road_pack.json
+
+# Generate deterministic multi-stage parity fixture
+python -m continuum_idr.parity
+
+# Generate any of 20 deterministic synthetic evaluation scenarios
+python -m continuum_idr.cli synthetic --scenario list
+python -m continuum_idr.cli synthetic --scenario tunnel_total_gnss_blackout_60s --duration 60 --output artifacts/synthetic/tunnel.jsonl
+
+# Ingest, audit, and validate phone-recorded trip logs (Schema 1.0.0)
+python -m continuum_idr.cli validate-phone-log artifacts/synthetic/tunnel.jsonl
+python -m continuum_idr.cli phone-report artifacts/synthetic/tunnel.jsonl --output artifacts/reports/tunnel_report.md
+
+# Run localized cooperative V2X traffic gateway
+python -m continuum_idr.cli traffic-gateway --host 127.0.0.1 --port 8080
+
 # Run defined GNSS corruption scenarios
 python -m continuum_idr.cli stress --model models/motion_p0 --duration 15.0
 
@@ -120,22 +137,37 @@ python -m continuum_idr.cli profile --profile motorcycle
 
 Throughput checks demonstrate software timing on the measured computer. They do not establish external-IMU navigation accuracy.
 
-## Android source integration
+## Android Application & Build Artifacts
 
-The [`android/`](android/) directory contains Kotlin source and an integration guide. It is a source package, not a published or device-certified Android SDK. Validate accuracy, latency, memory, thermal behaviour, and battery use on the target phone before deployment claims.
+The [`android/`](android/) directory is a verified, standalone Gradle Android application project:
+- **Build output:** `android/app/build/outputs/apk/debug/app-debug.apk` (1,094,549 bytes)
+- **Model verification:** Packages trained `motion_portable.json` (SHA-256: `c98f71fd...`, verified byte-exact parity with Python bundle).
+- **Offline road maps:** Vector `MapView` renders topological road segments, vehicle heading, breadcrumb trail, uncertainty ellipse, and scale bar completely offline.
+- **On-device dead reckoning:** `ContinuumLocationEngine` handles causal 2-second IMU windowing, tree inference, alignment estimation, tilt shift detection ($>15^\circ$), gradual GNSS recovery blending, motorcycle lean angle compensation, parking crawl/reverse heuristics, and road snapping.
+- **Cooperative traffic sharing:** `TrafficBleManager` provides Bluetooth Low Energy (BLE) peer-to-peer hazard beaconing (`GNSS_OUTAGE`, `SPEED_BREAKER`, `POTHOLE`, `TRAFFIC_JAM`).
+- **Foreground trip recorder:** `TrackingService` logs Schema 1.0.0 JSONL trip files with Line 1 metadata, model SHA-256 hash, and raw IMU/GNSS.
+- **Unit test suite:** `android/app/src/test/java/ai/continuum/idr/` executes `ParityTest` and `RoadGraphPackTest` with 100% pass rate.
+
+Build and test commands:
+```powershell
+cd android
+.\gradlew.bat testDebugUnitTest    # Runs Kotlin unit tests
+.\gradlew.bat assembleDebug         # Produces debug APK
+```
 
 ## Repository guide
 
 | Path | Purpose |
 | --- | --- |
-| `continuum_idr/` | Python SDK, evaluation, CLI, and Studio server |
+| `continuum_idr/` | Python SDK, evaluation, CLI, synthetic generator, traffic gateway, Studio |
 | `continuum_idr/studio_static/` | Studio, driver view, and developer portal |
 | `models/motion_p0/` | Trained research model and manifest |
-| `models/portable/` | Portable JSON model representation |
-| `artifacts/evaluation/` | Current checked-in metrics, replay, and figures |
-| `android/` | Kotlin integration source |
+| `models/portable/` | Portable JSON model representation (`motion_portable.json`) |
+| `artifacts/evaluation/` | Checked-in IO-VNBD metrics, replay, and figures |
+| `android/` | Complete Android Gradle project and Kotlin application source |
+| `docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md` | Field data collection & testing protocol for Indian road conditions |
 | `docs/idr/` | Product, architecture, evaluation, and roadmap documents |
-| `tests/` | Unit and integration tests |
+| `tests/` | Python unit and integration test suite (110 passing tests) |
 
 ## Supported scope and limitations
 

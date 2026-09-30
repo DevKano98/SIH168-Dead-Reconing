@@ -25,6 +25,11 @@ android {
     }
 }
 
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20231013")
+}
+
 val copyModelAsset = tasks.register<Copy>("copyModelAsset") {
     from("../../models/portable/motion_portable.json")
     into("src/main/assets")

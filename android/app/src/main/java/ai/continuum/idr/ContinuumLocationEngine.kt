@@ -10,6 +10,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.SystemClock
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -23,7 +24,9 @@ import kotlin.math.sqrt
  */
 class ContinuumLocationEngine(
     private val context: Context,
-    private val portableRunner: PortableTreeRunner
+    private val portableRunner: PortableTreeRunner,
+    var vehicleProfile: VehicleProfile = VehicleProfile.CAR,
+    var roadGraphPack: RoadGraphPack? = null
 ) : LocationListener, SensorEventListener {
 
     enum class FallbackState {
@@ -33,8 +36,18 @@ class ContinuumLocationEngine(
         RECOVERING
     }
 
+    enum class VehicleProfile {
+        CAR,
+        MOTORCYCLE,
+        PARKING,
+        EXTERNAL_IMU
+    }
+
     interface LocationUpdateCallback {
         fun onLocationUpdate(location: Location, isFallback: Boolean, state: FallbackState)
+        fun onLocationUpdate(location: Location, isFallback: Boolean, state: FallbackState, matchResult: MapMatchResult?) {
+            onLocationUpdate(location, isFallback, state)
+        }
         fun onSurfaceAnomaly(eventType: String, severity: Double)
         fun onMountShiftDetected()
         fun onRawGnss(location: Location)
@@ -56,12 +69,26 @@ class ContinuumLocationEngine(
     var currentState = FallbackState.GNSS_HEALTHY
         private set
 
-    private var currentLat = 0.0
-    private var currentLon = 0.0
-    private var currentSpeedMps = 0.0f
-    private var currentBearingDeg = 0.0f
-    private var currentUncertaintyM = 5.0f
-    private var hasNavigationOrigin = false
+    var currentLat = 0.0
+        private set
+    var currentLon = 0.0
+        private set
+    var currentSpeedMps = 0.0f
+        private set
+    var currentBearingDeg = 0.0f
+        private set
+    var currentUncertaintyM = 5.0f
+        private set
+    var hasNavigationOrigin = false
+        private set
+    var latestMatchResult: MapMatchResult? = null
+        private set
+
+    // Recovery blending
+    private var recoveryStartRealtimeMs = 0L
+    private val RECOVERY_DURATION_MS = 2500L
+    private var recoverySourceLat = 0.0
+    private var recoverySourceLon = 0.0
 
     // IMU buffer for 2.0s causal feature calculation (20 samples at 10 Hz)
     private val imuWindow = ArrayDeque<DoubleArray>(20)
@@ -76,6 +103,13 @@ class ContinuumLocationEngine(
     private var refGravityY = 0f
     private var refGravityZ = 9.81f
     private var isRefGravitySet = false
+
+    // Motorcycle Lean Angle state
+    var currentLeanAngleDeg = 0.0
+        private set
+
+    // Parking crawl / reverse detection
+    private var isReverseGearDetected = false
 
     fun start(updateCallback: LocationUpdateCallback) {
         if (isTracking) return
@@ -94,16 +128,17 @@ class ContinuumLocationEngine(
             // Require ACCESS_FINE_LOCATION
         }
 
-        // 2. Register IMU Sensors (Accelerate & Gyroscope at SENSOR_DELAY_GAME ~50 Hz or SENSOR_DELAY_UI ~16 Hz)
+        // 2. Register IMU Sensors
         val linearAccel = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
         val accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         val gyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         val gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
 
         hasLinearAccelerationSensor = linearAccel != null
-        (linearAccel ?: accel)?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        gyro?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        gravity?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        val delay = if (vehicleProfile == VehicleProfile.EXTERNAL_IMU) SensorManager.SENSOR_DELAY_FASTEST else SensorManager.SENSOR_DELAY_GAME
+        (linearAccel ?: accel)?.let { sensorManager.registerListener(this, it, delay) }
+        gyro?.let { sensorManager.registerListener(this, it, delay) }
+        gravity?.let { sensorManager.registerListener(this, it, delay) }
     }
 
     fun stop() {
@@ -115,26 +150,55 @@ class ContinuumLocationEngine(
     }
 
     override fun onLocationChanged(location: Location) {
-        lastFixElapsedRealtimeMs = SystemClock.elapsedRealtime()
+        val nowMs = SystemClock.elapsedRealtime()
+        lastFixElapsedRealtimeMs = nowMs
         callback?.onRawGnss(location)
 
         val isAccurate = location.accuracy <= GNSS_ACCURACY_THRESHOLD_M
         if (isAccurate) {
             if (currentState == FallbackState.FALLBACK_ACTIVE) {
+                // Initiate smooth recovery blending
                 currentState = FallbackState.RECOVERING
+                recoveryStartRealtimeMs = nowMs
+                recoverySourceLat = currentLat
+                recoverySourceLon = currentLon
+            }
+
+            if (currentState == FallbackState.RECOVERING) {
+                val elapsedRecovery = nowMs - recoveryStartRealtimeMs
+                if (elapsedRecovery >= RECOVERY_DURATION_MS) {
+                    currentState = FallbackState.GNSS_HEALTHY
+                    currentLat = location.latitude
+                    currentLon = location.longitude
+                } else {
+                    val alpha = (elapsedRecovery.toDouble() / RECOVERY_DURATION_MS).coerceIn(0.0, 1.0)
+                    currentLat = (1.0 - alpha) * recoverySourceLat + alpha * location.latitude
+                    currentLon = (1.0 - alpha) * recoverySourceLon + alpha * location.longitude
+                }
             } else {
                 currentState = FallbackState.GNSS_HEALTHY
+                currentLat = location.latitude
+                currentLon = location.longitude
             }
-            currentLat = location.latitude
-            currentLon = location.longitude
+
             currentSpeedMps = location.speed
-            currentBearingDeg = location.bearing
+            if (location.hasBearing() && location.speed >= 1.5f) {
+                currentBearingDeg = location.bearing
+            }
             currentUncertaintyM = location.accuracy
             hasNavigationOrigin = true
 
-            callback?.onLocationUpdate(location, false, currentState)
+            // Optional map matching update
+            updateMapMatching()
+
+            val blendedLocation = Location(location).apply {
+                latitude = currentLat
+                longitude = currentLon
+                accuracy = currentUncertaintyM
+            }
+            callback?.onLocationUpdate(blendedLocation, false, currentState, latestMatchResult)
         } else {
-            // GPS degraded (e.g. urban canyon multipath)
+            // Degraded accuracy / multipath
             currentState = FallbackState.FALLBACK_ACTIVE
         }
     }
@@ -146,7 +210,9 @@ class ContinuumLocationEngine(
 
         // Check for GNSS Outage condition
         if (timeSinceFix > GNSS_TIMEOUT_MS) {
-            currentState = FallbackState.FALLBACK_ACTIVE
+            if (currentState != FallbackState.FALLBACK_ACTIVE) {
+                currentState = FallbackState.FALLBACK_ACTIVE
+            }
         } else if (timeSinceFix > 1000L && currentState == FallbackState.GNSS_HEALTHY) {
             currentState = FallbackState.OUTAGE_PENDING
         }
@@ -162,6 +228,15 @@ class ContinuumLocationEngine(
                         if (hasLinearAccelerationSensor) 0.0 else latestGravity[index]
                 }
                 checkSurfaceShock(latestLinearAcceleration[2].toFloat())
+
+                // Parking reverse detection: negative longitudinal acceleration when starting from stop
+                if (vehicleProfile == VehicleProfile.PARKING && currentSpeedMps < 0.5f) {
+                    if (latestLinearAcceleration[1] < -1.8) {
+                        isReverseGearDetected = true
+                    } else if (latestLinearAcceleration[1] > 1.2) {
+                        isReverseGearDetected = false
+                    }
+                }
             }
             Sensor.TYPE_GYROSCOPE -> {
                 appendImuSample(event)
@@ -179,12 +254,36 @@ class ContinuumLocationEngine(
         } else 0.02
         lastImuTimestampNs = gyroEvent.timestamp
 
-        // Integrate yaw rate (assume landscape or vertical mount alignment)
+        // Integrate yaw rate
         val yawRateRad = gyroEvent.values[2].toDouble()
-        currentBearingDeg = ((currentBearingDeg + Math.toDegrees(yawRateRad * dtS)) % 360.0 + 360.0).toFloat() % 360f
+        val deltaBearingDeg = Math.toDegrees(yawRateRad * dtS)
+        currentBearingDeg = (((currentBearingDeg + deltaBearingDeg) % 360.0 + 360.0) % 360.0).toFloat()
 
+        // Predict speed from portable tree runner
         val prediction = portableRunner.predict(summarizeImuWindow())
-        currentSpeedMps = if (prediction.isStopped) 0.0f else prediction.speedMps.toFloat()
+        var predictedSpeed = if (prediction.isStopped) 0.0 else prediction.speedMps
+
+        // Profile-specific modifications
+        when (vehicleProfile) {
+            VehicleProfile.MOTORCYCLE -> {
+                // Lean angle compensation: theta = atan(v * omega / g)
+                val g = 9.80665
+                val leanRad = atan2(predictedSpeed * yawRateRad, g)
+                currentLeanAngleDeg = Math.toDegrees(leanRad)
+            }
+            VehicleProfile.PARKING -> {
+                if (predictedSpeed < 0.6) predictedSpeed = 0.0
+                if (isReverseGearDetected && predictedSpeed > 0.0) {
+                    // Reverse speed convention
+                    predictedSpeed = -predictedSpeed
+                }
+            }
+            else -> {
+                currentLeanAngleDeg = 0.0
+            }
+        }
+
+        currentSpeedMps = predictedSpeed.toFloat()
 
         // Propagate WGS-84 coordinates
         val distanceM = currentSpeedMps * dtS
@@ -198,26 +297,57 @@ class ContinuumLocationEngine(
 
         currentLat += deltaNorth / metersPerDegLat
         currentLon += deltaEast / metersPerDegLon
-        currentUncertaintyM += prediction.speedStdMps.toFloat() * dtS.toFloat()
+        currentUncertaintyM += (prediction.speedStdMps * dtS).toFloat()
+
+        // Map Matching Soft Snapping if Pack Loaded
+        updateMapMatching()
+        latestMatchResult?.let { match ->
+            if (match.matched && match.matchConfidence >= 0.70 && !match.isAmbiguous && match.snappedLat != null && match.snappedLon != null) {
+                // Softly pull towards road centerline to suppress lateral gyro integration drift
+                val snapWeight = 0.15
+                currentLat = (1.0 - snapWeight) * currentLat + snapWeight * match.snappedLat
+                currentLon = (1.0 - snapWeight) * currentLon + snapWeight * match.snappedLon
+
+                // Align bearing if within reasonable difference (< 25 deg)
+                match.roadHeadingDeg?.let { roadHeading ->
+                    val diff = abs(((currentBearingDeg - roadHeading + 180.0) % 360.0 + 360.0) % 360.0 - 180.0)
+                    if (diff < 25.0) {
+                        currentBearingDeg = (currentBearingDeg * 0.96f + roadHeading.toFloat() * 0.04f)
+                    }
+                }
+            }
+        }
 
         // Synthesize Android Location object
         val synthetic = Location("ContinuumIDR").apply {
             latitude = currentLat
             longitude = currentLon
-            speed = currentSpeedMps
+            speed = abs(currentSpeedMps)
             bearing = currentBearingDeg
             accuracy = currentUncertaintyM
             time = System.currentTimeMillis()
             elapsedRealtimeNanos = gyroEvent.timestamp
         }
 
-        callback?.onLocationUpdate(synthetic, true, currentState)
+        callback?.onLocationUpdate(synthetic, true, currentState, latestMatchResult)
+    }
+
+    private fun updateMapMatching() {
+        val pack = roadGraphPack ?: return
+        if (!hasNavigationOrigin) return
+        latestMatchResult = pack.match(
+            lat = currentLat,
+            lon = currentLon,
+            headingDeg = currentBearingDeg.toDouble(),
+            speedMps = abs(currentSpeedMps.toDouble())
+        )
     }
 
     /** Matches continuum_idr.features.summarize_window: 6 channels × 7 statistics. */
-    private fun summarizeImuWindow(): DoubleArray {
+    fun summarizeImuWindow(): DoubleArray {
         val samples = imuWindow.toList()
         val features = DoubleArray(42)
+        if (samples.isEmpty()) return features
         for (channel in 0 until 6) {
             val values = DoubleArray(samples.size) { samples[it][channel] }
             val mean = values.average()
@@ -240,10 +370,9 @@ class ContinuumLocationEngine(
     }
 
     private fun appendImuSample(gyroEvent: SensorEvent) {
-        // The P0 model was trained at 10 Hz.  Keep its causal 2-second window
-        // time-aligned even when the handset supplies 50–200 Hz sensor events.
+        val minIntervalNs = if (vehicleProfile == VehicleProfile.EXTERNAL_IMU) 10_000_000L else 100_000_000L
         if (lastFeatureSampleTimestampNs != 0L &&
-            gyroEvent.timestamp - lastFeatureSampleTimestampNs < 100_000_000L) return
+            gyroEvent.timestamp - lastFeatureSampleTimestampNs < minIntervalNs) return
         lastFeatureSampleTimestampNs = gyroEvent.timestamp
         val sample = DoubleArray(6)
         for (index in 0..2) {
@@ -278,7 +407,7 @@ class ContinuumLocationEngine(
         if (verticalLinearAcceleration > 4.5f) {
             callback?.onSurfaceAnomaly("SPEED_BREAKER", verticalLinearAcceleration.toDouble() / 12.0)
         } else if (verticalLinearAcceleration < -4.0f) {
-            callback?.onSurfaceAnomaly("POTHOLE", Math.abs(verticalLinearAcceleration).toDouble() / 14.0)
+            callback?.onSurfaceAnomaly("POTHOLE", abs(verticalLinearAcceleration).toDouble() / 14.0)
         }
     }
 
