@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "continuum-idr"
 version = "0.1.0"
 description = "GNSS/IMU intelligent dead-reckoning SDK and reproducible IO-VNBD prototype"
-readme = "PROJECT_DOCUMENTATION.md"
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.23",

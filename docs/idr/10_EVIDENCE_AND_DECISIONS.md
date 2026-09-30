@@ -4,7 +4,7 @@
 
 | Evidence | What it supports | What it does not prove |
 | --- | --- | --- |
-| [Dataset catalog](../../DATASET_CATALOG.md) | File inventory, parsed schemas/ranges, missing cells, duplicate counts | Correct semantics for every field, synchronization, learned navigation performance |
+| [Dataset catalog](../BENCHMARKS_AND_EVIDENCE.md) | File inventory, parsed schemas/ranges, missing cells, duplicate counts | Correct semantics for every field, synchronization, learned navigation performance |
 | [IO-VNBD paper](../../README_1.pdf) | Published experiment setup and run metadata | Perfect labels, universal schema consistency, phone deployment accuracy |
 | Raw S-M sample comparison | Identical gyro triplet values can appear under YPR and XYZ labels | The physical axis mapping without additional validation |
 | Raw S-A4 sample and raw profile | Values are inconsistent with headers from the inserted blank onward | A validated repair without checking every affected row |

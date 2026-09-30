@@ -115,7 +115,7 @@ flowchart LR
 
     BF -->|Dynamic Tilt Alignment R_BV| VF
     VF -->|Yaw Rate Integration θ_k| ENU_F
-    ENU_F -->|Meridional / Parallel Step| GEO
+    ENU_F -->|"Meridional / Parallel Step"| GEO
 ```
 
 ---
@@ -418,7 +418,7 @@ flowchart TD
     end
 
     subgraph ANDROID_SYSTEM["Android OS Location Framework"]
-        MOCK_RELAY -->|setTestProviderLocation(GPS_PROVIDER)| LOC_MGR["LocationManager Service\n(/dev/gps injection)"]
+        MOCK_RELAY -->|"setTestProviderLocation(GPS_PROVIDER)"| LOC_MGR["LocationManager Service\n(/dev/gps injection)"]
         LOC_MGR --> FUSED_PROV["Google Play Services FusedLocationProvider"]
     end
 
@@ -528,8 +528,8 @@ flowchart LR
         CORE_SDK["Continuum IDREngine\n(Python Portable Reference)"]
     end
 
-    CTRL -->|POST /api/runtime/control| CTRL_ENDPOINT
-    CTRL -->|POST /api/runtime/scenario| SCENARIO_MGR
+    CTRL -->|"POST /api/runtime/control"| CTRL_ENDPOINT
+    CTRL -->|"POST /api/runtime/scenario"| SCENARIO_MGR
     SCENARIO_MGR --> NOISE_GEN
     NOISE_GEN --> CORE_SDK
     CORE_SDK --> SSE_ENDPOINT
@@ -553,7 +553,7 @@ flowchart TD
     end
 
     subgraph BLE_RF["2.4 GHz Bluetooth Low Energy Broadcast (10–30m Range)"]
-        BLE_ADV_A -.->|Manufacturer Data Packet\n[Speed, Hazard, Stopped, Seq]| BLE_SCAN_B
+        BLE_ADV_A -.->|"Manufacturer Data Packet: Speed, Hazard, Stopped, Seq"| BLE_SCAN_B
         BLE_ADV_B -.->|Relay Mesh Packet| BLE_SCAN_C
     end
 

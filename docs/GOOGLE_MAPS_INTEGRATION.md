@@ -35,7 +35,7 @@ flowchart TD
         IDR_ENGINE["ContinuumLocationEngine\n(Embedded Kotlin SDK)"]
         MAP_SDK["Google Maps SDK / Mapbox SDK\n(Custom Location Engine / Source)"]
         
-        IDR_ENGINE -->|LocationSource / LocationEngine| MAP_SDK
+        IDR_ENGINE -->|"LocationSource / LocationEngine"| MAP_SDK
         MAP_SDK --> APP_CUSTOM
     end
 ```

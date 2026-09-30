@@ -2,7 +2,7 @@
 
 ## What is available
 
-The [dataset catalog](../../DATASET_CATALOG.md) records 564 CSVs: 323 vehicle files with 29 columns, and 241 smartphone files with five header variants. There are 9,189,756 rows across copies, but only 329 distinct CSV byte streams after exact-file hashing. Byte-distinct files can still contain the same journey with different headers or trimming, so 329 is not a count of independent drives.
+The [dataset catalog](../BENCHMARKS_AND_EVIDENCE.md) records 564 CSVs: 323 vehicle files with 29 columns, and 241 smartphone files with five header variants. There are 9,189,756 rows across copies, but only 329 distinct CSV byte streams after exact-file hashing. Byte-distinct files can still contain the same journey with different headers or trimming, so 329 is not a count of independent drives.
 
 Use the actual extracted directory:
 

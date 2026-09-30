@@ -346,13 +346,13 @@ flowchart LR
         ESTIMATOR["Continuum IDREngine (Python SDK)"]
     end
 
-    UI_CTRL -->|POST /api/runtime/control| ROUTER
-    UI_CTRL -->|POST /api/runtime/scenario| ROUTER
+    UI_CTRL -->|"POST /api/runtime/control"| ROUTER
+    UI_CTRL -->|"POST /api/runtime/scenario"| ROUTER
     ROUTER --> SIM_SESS
     SIM_SESS --> NOISE_ENG
     NOISE_ENG --> ESTIMATOR
     ESTIMATOR --> SIM_SESS
-    SIM_SESS -->|GET /api/runtime/status (SSE / 10 Hz)| ROUTER
+    SIM_SESS -->|"GET /api/runtime/status (SSE 10 Hz)"| ROUTER
     ROUTER --> MAP_LEAF
     ROUTER --> CHARTS
     ROUTER --> HUD
