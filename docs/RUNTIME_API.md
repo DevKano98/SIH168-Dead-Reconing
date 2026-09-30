@@ -1,9 +1,10 @@
 # Interactive SDK runtime API (Studio 0.3)
 
 This API runs `IDREngine` on raw recorded IO-VNBD sensor measurements. It does not
-read saved prediction states. Live phone sensing is not implemented. The old HTML
-frontend still uses the legacy saved replay; frontend integration is delegated to
-Antigravity via `ANTIGRAVITY_FRONTEND_PROMPT.md`.
+read saved prediction states. The Continuum Studio frontend (`index.html`, `app.js`,
+`mobile.html`, `mobile.js`) is connected to `/api/runtime` and `/api/runtime/control`
+for interactive session control and driver telemetry streaming. Live on-device phone
+sensing is implemented separately in the Android application (`android/`).
 
 ## Start
 

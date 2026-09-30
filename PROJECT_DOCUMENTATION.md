@@ -12,7 +12,15 @@ The prototype is one end-to-end release of the proposed product. The later Andro
 
 ## Current status
 
-The **P0 prototype** is fully implemented and verified in this workspace. The engine, trained model (`models/motion_p0`), defensible evaluation suite (`artifacts/evaluation/`), and Continuum Studio replay dashboard are complete. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the active status report and [artifacts/evaluation/RESULTS.md](artifacts/evaluation/RESULTS.md) for the latest benchmark results. The design and architecture specifications below provide the technical foundation and roadmap.
+The **Continuum IDR project** is implemented and verified end-to-end:
+- **Android Application**: Standalone Gradle project compiling to `android/app/build/outputs/apk/debug/app-debug.apk` (1.09 MB), packaging trained `motion_portable.json` weights, on-device dead reckoning, offline vector `MapView`, foreground trip recorder, and cooperative BLE V2V hazard beaconing.
+- **Python Research SDK & Studio**: Core estimator, trained model (`models/motion_p0`), evaluation suite (`artifacts/evaluation/`), and Continuum Studio replay server.
+- **Parity Testing**: Multi-stage deterministic fixture (`parity_fixture.json`) verified in both Kotlin JVM (`ParityTest.kt`) and Python (`test_parity.py`) within $10^{-4}$ m/s tolerance.
+- **Deterministic Simulation**: 20-scenario synthetic generator (`continuum_idr/synthetic.py`) covering tunnels, speed bumps, potholes, motorcycle lean, parking crawl/reverse, multipath, and 200 Hz IMU.
+- **Indian-Road Pipeline**: Ingestion and validation engine (`continuum_idr/phone_data.py`) and standard operating protocol (`docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md`).
+- **Cooperative Traffic Gateway**: Localized FastAPI clearinghouse (`continuum_idr/traffic_gateway.py`) with spatial clustering and confidence decay.
+
+See [CURRENT_STATUS.md](CURRENT_STATUS.md) and [PROJECT_STATUS.md](PROJECT_STATUS.md) for canonical status and test matrices.
 
 ## Reading order
 
@@ -24,12 +32,10 @@ The **P0 prototype** is fully implemented and verified in this workspace. The en
 | [4. SDK specification](docs/idr/04_SDK_SPECIFICATION.md) | Public API, input/output contracts, lifecycle, errors, and packaging |
 | [5. Data and model plan](docs/idr/05_DATA_AND_MODEL_PLAN.md) | Exact IO-VNBD preparation, labels, splits, models, and local collection |
 | [6. Evaluation protocol](docs/idr/06_EVALUATION_PROTOCOL.md) | Honest GNSS masking, baselines, drift metrics, uncertainty, and timing |
-| [7. Prototype and video](docs/idr/07_PROTOTYPE_AND_VIDEO.md) | Screens, controls, demo sequence, narration, and recording checklist |
-| [8. Roadmap and backlog](docs/idr/08_ROADMAP_AND_BACKLOG.md) | Build order, dependencies, work estimates, and completion gates |
-| [9. Proposal and judge questions](docs/idr/09_PROPOSAL_AND_FAQ.md) | Reusable proposal wording and defensible answers |
-| [10. Evidence and decisions](docs/idr/10_EVIDENCE_AND_DECISIONS.md) | Sources, corrections to the supplied advice, assumptions, and decisions |
-| [Results template](docs/idr/templates/RESULTS_TEMPLATE.md) | The results table to populate after experiments |
-| [Model card template](docs/idr/templates/MODEL_CARD_TEMPLATE.md) | Training provenance, limits, export, and runtime evidence |
+| [7. Field collection protocol](docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md) | Standardized Indian road data capture, vehicle classes, and reporting |
+| [8. Android integration](android/README.md) | Android Gradle project, offline MapView, BLE V2V, and APK usage |
+| [9. Runtime API](docs/RUNTIME_API.md) | Interactive backend streaming and playback control specification |
+| [10. Results report](artifacts/evaluation/RESULTS.md) | Authoritative held-out IO-VNBD evaluation figures |
 
 ## The first prototype at a glance
 

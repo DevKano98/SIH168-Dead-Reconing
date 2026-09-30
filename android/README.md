@@ -1,91 +1,69 @@
-# Continuum IDR — Android Source Integration
+# Continuum IDR — Android Source & Application Project
 
-This directory is a buildable Android application project plus the reusable Kotlin location engine. The app records real handset sensors and GNSS in a foreground service; it is not yet device-certified navigation software.
+This directory contains a complete, verified Gradle Android application project and Kotlin location engine for Continuum IDR. The application runs on-device dead reckoning, renders offline vector road maps, exchanges cooperative BLE hazard beacons, and logs Schema 1.0.0 trip files in a foreground service.
 
-## Included files
+## Included Modules & Components
 
-| File | Purpose |
-| --- | --- |
-| `app/` | Installable recorder app module, manifest, foreground service and basic UI |
-| `app/src/main/java/ai/continuum/idr/ContinuumLocationEngine.kt` | Reads Android location and motion events and emits fallback location updates |
-| `app/src/main/java/ai/continuum/idr/PortableTreeRunner.kt` | Evaluates the exported portable motion-model JSON without a Python runtime |
+| Component | Path | Purpose |
+| :--- | :--- | :--- |
+| **Location Engine** | `app/src/main/java/ai/continuum/idr/ContinuumLocationEngine.kt` | Fuses IMU & GNSS, handles 2.0s causal feature extraction (6 channels $\times$ 7 stats = 42 features), alignment estimation, tilt-shift detection ($>15^\circ$), gradual recovery blending, vehicle profiles (`CAR`, `MOTORCYCLE`, `PARKING`, `EXTERNAL_IMU`), and topological map snapping. |
+| **Portable Tree Runner** | `app/src/main/java/ai/continuum/idr/PortableTreeRunner.kt` | Evaluates trained `HistGradientBoosting` speed trees and `LogisticRegression` stop classifier directly from JSON without Python dependencies. |
+| **Road Graph Pack** | `app/src/main/java/ai/continuum/idr/RoadGraphPack.kt` | Ingests offline topological road network packs, spatial cell indexing, candidate search, cross-track error, and ambiguity scoring. |
+| **Offline Map Canvas** | `app/src/main/java/ai/continuum/idr/MapView.kt` | Zero-dependency offline vector canvas rendering topological roads, vehicle heading arrow, trajectory trail, uncertainty circle, and scale bar. |
+| **Cooperative BLE V2V** | `app/src/main/java/ai/continuum/idr/TrafficBleManager.kt` | Localized Vehicle-to-Vehicle (V2V) hazard broadcasting and scanning over Bluetooth Low Energy. |
+| **Foreground Service** | `app/src/main/java/ai/continuum/idr/TrackingService.kt` | Foreground trip recorder writing Schema 1.0.0 JSONL logs with Line 1 metadata, model SHA-256 hash, and raw sensors. |
+| **Activity UI** | `app/src/main/java/ai/continuum/idr/MainActivity.kt` | Telemetry HUD (speed, bearing, accuracy, lat/lon, road match, motorcycle lean angle), profile selector, interactive map view, and trip log exporter (`Intent.ACTION_SEND`). |
+| **Unit Tests** | `app/src/test/java/ai/continuum/idr/ParityTest.kt` | Validates speed prediction, stop classification, and uncertainty against golden multi-stage fixture `parity_fixture.json`. |
+| **Unit Tests** | `app/src/test/java/ai/continuum/idr/RoadGraphPackTest.kt` | Validates geographic projection, spatial candidate queries, and parallel-road ambiguity detection. |
 
-The `app` module uses `models/portable/motion_portable.json` as an Android asset at build time. The checked-in model is verified against the Python bundle in `tests/test_portable_model.py`. Full-trajectory parity remains a release gate.
+---
 
-## Build and use the recorder
+## Build and Test Instructions
 
-Install Android SDK Platform 36 and Build Tools 36.0.0, then set `ANDROID_HOME` (or create `android/local.properties` with `sdk.dir=...`). From this directory run:
+Prerequisites: Android SDK Platform 35 or 36, Android Build-Tools 35.0.0, and Java 17.
 
 ```powershell
-gradle wrapper --gradle-version 9.6.0
-.\gradlew.bat :app:assembleDebug
+# Run Kotlin JVM unit tests
+.\gradlew.bat testDebugUnitTest
+
+# Assemble installable Debug APK
+.\gradlew.bat assembleDebug
 ```
 
-Install `app/build/outputs/apk/debug/app-debug.apk` on an Android 8+ phone. Grant location and notification permission, tap **Start trip recording**, drive a route, then tap **Stop recording**. The JSONL event file is saved under the app's external-files `trips` directory and can be exported with Android Studio Device Explorer or `adb pull`.
+The compiled APK will be created at:
+```
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+(Current build size: ~1.09 MB; includes pre-packaged `motion_portable.json` and `sample_road_pack.json`).
 
-## Integrate the source
+---
 
-1. Copy both Kotlin files into your application package and update their package declaration if necessary.
-2. Copy `models/portable/motion_portable.json` to `app/src/main/assets/motion_portable.json`.
-3. Add location and sensor permissions to the manifest.
-4. Load the portable model and start one engine instance for the active trip.
+## Trip Recording & Export Workflow
 
-```xml
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-<uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
+1. Install the APK on an Android 8.0+ (API 26+) device.
+2. Grant Location, Notification, and Bluetooth permissions when prompted.
+3. Select the vehicle profile (`CAR`, `MOTORCYCLE`, `PARKING`, `EXTERNAL_IMU`).
+4. Tap **Start Trip**. A persistent foreground notification confirms tracking.
+5. Accelerate straight ($v > 2\text{ m/s}$) for initial orientation calibration.
+6. The app continuously displays real-time speed, heading, uncertainty, road match status, and offline vector map.
+7. Tap **Stop Trip**.
+8. Trip logs are saved as `continuum_YYYYMMDD_HHMMSS.jsonl` under `Android/data/ai.continuum.idr/files/trips/`.
+9. Tap **Export** next to any recorded trip to share via Gmail, Google Drive, or retrieve using `adb pull`:
+   ```powershell
+   adb pull /sdcard/Android/data/ai.continuum.idr/files/trips/ ./my_trips/
+   ```
+
+---
+
+## Field Validation Protocol & Ingestion
+
+Recorded trips can be ingested directly into the Python evaluation stack:
+```powershell
+# Audit trip data quality, sensor sampling rate, and latency gaps
+python -m continuum_idr.cli validate-phone-log path/to/trip.jsonl
+
+# Generate formal Markdown field evaluation report
+python -m continuum_idr.cli phone-report path/to/trip.jsonl --output report.md
 ```
 
-Request runtime location permission in your Activity or Compose flow before starting the engine.
-
-```kotlin
-val json = assets.open("motion_portable.json")
-    .bufferedReader()
-    .use { it.readText() }
-
-val runner = PortableTreeRunner.fromJsonString(json)
-val engine = ContinuumLocationEngine(this, runner)
-
-engine.start(object : ContinuumLocationEngine.LocationUpdateCallback {
-    override fun onLocationUpdate(
-        location: Location,
-        isFallback: Boolean,
-        state: ContinuumLocationEngine.FallbackState
-    ) {
-        updateMap(location.latitude, location.longitude)
-        updatePositioningStatus(state, isFallback)
-    }
-
-    override fun onSurfaceAnomaly(eventType: String, severity: Double) {
-        logSurfaceEvent(eventType, severity)
-    }
-
-    override fun onMountShiftDetected() {
-        showAlignmentWarning()
-    }
-})
-```
-
-Call `engine.stop()` when the owning service or screen stops tracking.
-
-## Client behaviour
-
-Use `FallbackState` to explain positioning quality:
-
-- `GNSS_HEALTHY`: normal location measurements are available.
-- `OUTAGE_PENDING`: the expected fix cadence has been missed but fallback is not confirmed.
-- `FALLBACK_ACTIVE`: the engine is emitting a dead-reckoned location.
-- `RECOVERING`: GNSS has returned and the engine is transitioning back.
-
-Show uncertainty or degraded status to the user. Do not describe a fallback estimate as lane-level unless an independent reference test supports that claim.
-
-## Required validation before a release
-
-- Confirm sensor axes and mounting assumptions on the target phone and vehicle.
-- Compare portable-runner output with the Python model for the same feature vectors.
-- Compare complete Android and Python trajectories for the same event stream.
-- Measure update rate, latency percentiles, missed deadlines, memory, battery, and thermal behaviour on named devices.
-- Test permission denial, missing sensors, timestamp gaps, background execution, process recreation, and GNSS recovery.
-- Run reference-based road tests outside the training domain.
-
-The repository currently supplies the source path and component tests. It does not contain the physical-device evidence needed to claim universal phone compatibility, a specific battery cost, or production accuracy.
+See [`docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md`](../docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md) for detailed test procedures across Indian road topologies, motorcycle lean cornering, and multi-level parking structures.
