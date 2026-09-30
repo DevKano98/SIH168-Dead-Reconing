@@ -159,12 +159,30 @@ class ContinuumLocationEngine(
     // Parking crawl / reverse detection
     private var isReverseGearDetected = false
 
+    fun setAnchorOrigin(lat: Double, lon: Double, bearingDeg: Float = 0.0f) {
+        currentLat = lat
+        currentLon = lon
+        currentBearingDeg = bearingDeg
+        hasNavigationOrigin = true
+        currentState = FallbackState.FALLBACK_ACTIVE
+        updateMapMatching()
+        val synthetic = Location("AnchorOrigin").apply {
+            latitude = currentLat
+            longitude = currentLon
+            speed = 0.0f
+            bearing = currentBearingDeg
+            accuracy = 5.0f
+            time = System.currentTimeMillis()
+        }
+        callback?.onLocationUpdate(synthetic, true, currentState, latestMatchResult)
+    }
+
     fun start(updateCallback: LocationUpdateCallback) {
         if (isTracking) return
         this.callback = updateCallback
         this.isTracking = true
 
-        // 1. Register GNSS Provider
+        // 1. Register GNSS Provider and Network Provider
         try {
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
@@ -172,8 +190,34 @@ class ContinuumLocationEngine(
                 0f,
                 this
             )
+            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    2000L,
+                    0f,
+                    this
+                )
+            }
+            val lastGps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            val lastNet = try {
+                locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            } catch (e: Exception) {
+                null
+            }
+            val seed = lastGps ?: lastNet
+            if (seed != null && !hasNavigationOrigin) {
+                currentLat = seed.latitude
+                currentLon = seed.longitude
+                if (seed.hasBearing()) {
+                    currentBearingDeg = seed.bearing
+                }
+                hasNavigationOrigin = true
+                currentState = FallbackState.FALLBACK_ACTIVE
+            }
         } catch (e: SecurityException) {
             // Require ACCESS_FINE_LOCATION
+        } catch (e: Exception) {
+            // Optional provider issue
         }
 
         // 2. Register IMU Sensors
@@ -290,6 +334,12 @@ class ContinuumLocationEngine(
             }
             Sensor.TYPE_GYROSCOPE -> {
                 appendImuSample(event)
+                if (!hasNavigationOrigin && roadGraphPack != null && imuWindow.size == 20) {
+                    val firstNode = roadGraphPack!!.nodes.values.firstOrNull()
+                    if (firstNode != null) {
+                        setAnchorOrigin(firstNode.lat, firstNode.lon, 0.0f)
+                    }
+                }
                 // If in outage, dead reckon heading and forward position
                 if (currentState == FallbackState.FALLBACK_ACTIVE && hasNavigationOrigin && imuWindow.size == 20) {
                     deadReckonStep(event)

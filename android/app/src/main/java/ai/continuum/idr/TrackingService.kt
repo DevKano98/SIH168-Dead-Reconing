@@ -6,9 +6,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -24,12 +26,50 @@ class TrackingService : Service(),
 
     private var engine: ContinuumLocationEngine? = null
     private var bleManager: TrafficBleManager? = null
+    private var mockRelay: SystemMockRelay? = null
     private var writer: BufferedWriter? = null
     private var eventCount = 0
     private var currentProfile = ContinuumLocationEngine.VehicleProfile.CAR
+    private var lastHeartbeatMs = 0L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(NOTIFICATION_ID, notification())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification())
+        }
+
+        if (intent?.action == ACTION_TOGGLE_MOCK_RELAY) {
+            val enable = intent.getBooleanExtra("enable", true)
+            if (enable) {
+                if (mockRelay == null) mockRelay = SystemMockRelay(this)
+                val ok = mockRelay?.startRelay() == true
+                if (ok) {
+                    status("System GPS Relay ACTIVE (Google Maps connected)")
+                } else {
+                    status(mockRelay?.lastError ?: "Select in Developer Options")
+                }
+            } else {
+                mockRelay?.stopRelay()
+                mockRelay = null
+                status("System GPS Relay disabled")
+            }
+            return START_STICKY
+        }
+
+        if (intent?.action == ACTION_SET_ANCHOR) {
+            val lat = intent.getDoubleExtra("lat", 12.8450)
+            val lon = intent.getDoubleExtra("lon", 77.6620)
+            val heading = intent.getFloatExtra("bearing_deg", 0.0f)
+            engine?.setAnchorOrigin(lat, lon, heading)
+            status("Anchored to: %.4f, %.4f".format(lat, lon))
+            return START_STICKY
+        }
+
         if (engine != null) return START_STICKY
 
         val profileStr = intent?.getStringExtra(EXTRA_PROFILE) ?: "CAR"
@@ -106,9 +146,11 @@ class TrackingService : Service(),
         }
         engine?.stop()
         bleManager?.stop()
+        mockRelay?.stopRelay()
         writer?.close()
         engine = null
         bleManager = null
+        mockRelay = null
         writer = null
         super.onDestroy()
     }
@@ -129,6 +171,7 @@ class TrackingService : Service(),
         state: ContinuumLocationEngine.FallbackState,
         matchResult: MapMatchResult?
     ) {
+        mockRelay?.pushLocation(location)
         write(
             "position",
             "lat" to location.latitude,
@@ -186,6 +229,29 @@ class TrackingService : Service(),
             "timestamp_ns" to timestampNs,
             "values" to JsonRaw(values.joinToString(prefix = "[", postfix = "]"))
         )
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastHeartbeatMs >= 500L) {
+            lastHeartbeatMs = now
+            engine?.let { eng ->
+                val diag = eng.getDiagnostics()
+                sendBroadcast(
+                    Intent(ACTION_HEARTBEAT).setPackage(packageName).apply {
+                        putExtra("imu_samples", diag.imuSamplesCount)
+                        putExtra("gnss_fixes", diag.gnssFixesCount)
+                        putExtra("dead_reckon_steps", diag.deadReckonStepsCount)
+                        putExtra("state", eng.currentState.name)
+                        putExtra("has_origin", eng.hasNavigationOrigin)
+                        putExtra("mem_kb", diag.estimatedMemoryKb)
+                        putExtra("inf_latency_us", diag.lastInferenceLatencyUs)
+                        putExtra("avg_inf_latency_us", diag.avgInferenceLatencyUs)
+                        putExtra("current_lat", eng.currentLat)
+                        putExtra("current_lon", eng.currentLon)
+                        putExtra("current_speed_mps", eng.currentSpeedMps)
+                        putExtra("current_bearing_deg", eng.currentBearingDeg)
+                    }
+                )
+            }
+        }
     }
 
     override fun onSurfaceAnomaly(eventType: String, severity: Double) {
@@ -273,9 +339,13 @@ class TrackingService : Service(),
     companion object {
         const val ACTION_STATUS = "ai.continuum.idr.STATUS"
         const val ACTION_TELEMETRY = "ai.continuum.idr.TELEMETRY"
+        const val ACTION_HEARTBEAT = "ai.continuum.idr.HEARTBEAT"
+        const val ACTION_SET_ANCHOR = "ai.continuum.idr.SET_ANCHOR"
+        const val ACTION_TOGGLE_MOCK_RELAY = "ai.continuum.idr.TOGGLE_MOCK_RELAY"
         const val EXTRA_STATUS = "status"
         const val EXTRA_PROFILE = "profile"
         const val EXTRA_ROUTE_CATEGORY = "route_category"
+        const val EXTRA_ENABLE_MOCK_RELAY = "enable_mock_relay"
         private const val CHANNEL_ID = "continuum_recording"
         private const val NOTIFICATION_ID = 2041
     }
