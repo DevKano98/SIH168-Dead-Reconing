@@ -33,6 +33,7 @@ class TrackingService : Service(),
         if (engine != null) return START_STICKY
 
         val profileStr = intent?.getStringExtra(EXTRA_PROFILE) ?: "CAR"
+        val routeCategory = intent?.getStringExtra(EXTRA_ROUTE_CATEGORY) ?: "unspecified"
         currentProfile = try {
             ContinuumLocationEngine.VehicleProfile.valueOf(profileStr)
         } catch (e: Exception) {
@@ -73,6 +74,7 @@ class TrackingService : Service(),
                 "device_manufacturer" to Build.MANUFACTURER,
                 "os_version" to Build.VERSION.RELEASE,
                 "vehicle_profile" to currentProfile.name,
+                "route_category" to routeCategory,
                 "start_time_ms" to System.currentTimeMillis()
             )
             writer?.flush()
@@ -89,6 +91,19 @@ class TrackingService : Service(),
     }
 
     override fun onDestroy() {
+        val diag = engine?.getDiagnostics()
+        if (diag != null) {
+            write(
+                "diagnostics",
+                "imu_samples" to diag.imuSamplesCount,
+                "gnss_fixes" to diag.gnssFixesCount,
+                "dead_reckon_steps" to diag.deadReckonStepsCount,
+                "avg_inference_latency_us" to diag.avgInferenceLatencyUs,
+                "avg_map_match_latency_us" to diag.avgMapMatchLatencyUs,
+                "estimated_memory_kb" to diag.estimatedMemoryKb
+            )
+            try { writer?.flush() } catch (e: Exception) {}
+        }
         engine?.stop()
         bleManager?.stop()
         writer?.close()
@@ -143,6 +158,11 @@ class TrackingService : Service(),
                 putExtra("segment_id", matchResult?.segmentId)
                 putExtra("match_confidence", matchResult?.matchConfidence ?: 0.0)
                 putExtra("lean_angle_deg", engine?.currentLeanAngleDeg ?: 0.0)
+                val diag = engine?.getDiagnostics()
+                putExtra("inf_latency_us", diag?.lastInferenceLatencyUs ?: 0L)
+                putExtra("avg_inf_latency_us", diag?.avgInferenceLatencyUs ?: 0L)
+                putExtra("mem_kb", diag?.estimatedMemoryKb ?: 0L)
+                putExtra("imu_samples", diag?.imuSamplesCount ?: 0L)
             }
         )
     }
@@ -255,6 +275,7 @@ class TrackingService : Service(),
         const val ACTION_TELEMETRY = "ai.continuum.idr.TELEMETRY"
         const val EXTRA_STATUS = "status"
         const val EXTRA_PROFILE = "profile"
+        const val EXTRA_ROUTE_CATEGORY = "route_category"
         private const val CHANNEL_ID = "continuum_recording"
         private const val NOTIFICATION_ID = 2041
     }

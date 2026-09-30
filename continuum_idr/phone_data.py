@@ -352,3 +352,221 @@ def generate_markdown_validation_report(log_path: str | Path, out_report_path: s
         out_p.write_text(report_text, encoding="utf-8")
 
     return report_text
+
+
+def validate_trip_folder(
+    folder_path: str | Path,
+    train_ratio: float = 0.70,
+    val_ratio: float = 0.15,
+    test_ratio: float = 0.15,
+    seed: int = 42,
+    out_manifest_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Audit a directory of phone / synthetic JSONL trips and create train/val/test splits."""
+    folder = Path(folder_path)
+    if not folder.exists() or not folder.is_dir():
+        raise FileNotFoundError(f"Folder '{folder}' does not exist or is not a directory")
+
+    files = sorted(folder.glob("*.jsonl"))
+    trips_info: list[dict[str, Any]] = []
+
+    total_records = 0
+    total_duration_s = 0.0
+    valid_schema_count = 0
+    invalid_schema_count = 0
+    trips_with_anomalies = 0
+
+    trips_missing_gnss = 0
+    trips_missing_imu = 0
+    trips_missing_gravity = 0
+
+    imu_rates: list[float] = []
+    total_potholes = 0
+    total_speed_breakers = 0
+    total_mount_shifts = 0
+    total_outages = 0
+
+    source_domain_counts: dict[str, int] = {}
+    vehicle_profile_counts: dict[str, int] = {}
+    device_counts: dict[str, int] = {}
+
+    for f in files:
+        try:
+            parser = PhoneLogParser(f)
+            audit = parser.audit()
+            _, records = parser.parse()
+        except Exception as e:
+            invalid_schema_count += 1
+            trips_info.append({
+                "file_name": f.name,
+                "file_path": str(f),
+                "valid": False,
+                "error": str(e),
+            })
+            continue
+
+        if audit.valid_schema:
+            valid_schema_count += 1
+        else:
+            invalid_schema_count += 1
+
+        if audit.anomalies_detected:
+            trips_with_anomalies += 1
+
+        if audit.gnss_records_count == 0:
+            trips_missing_gnss += 1
+        if audit.imu_records_count == 0:
+            trips_missing_imu += 1
+
+        gravity_found = any(r.get("gravity_mps2") is not None for r in records if r.get("type") == "imu")
+        if not gravity_found:
+            trips_missing_gravity += 1
+
+        if audit.avg_imu_rate_hz > 0:
+            imu_rates.append(audit.avg_imu_rate_hz)
+
+        # Count surface kinds
+        pots = sum(1 for r in records if r.get("type") == "surface" and r.get("kind") == "POTHOLE")
+        bumps = sum(1 for r in records if r.get("type") == "surface" and r.get("kind") == "SPEED_BREAKER")
+        total_potholes += pots
+        total_speed_breakers += bumps
+        total_mount_shifts += audit.mount_shifts_count
+        total_outages += audit.outage_episodes_count
+
+        total_records += audit.total_lines
+        total_duration_s += audit.duration_s
+
+        # Provenance domain
+        meta = audit.metadata
+        domain = "synthetic" if (meta and (meta.scenario_id or "synthetic" in meta.extra.get("source", ""))) else "real_phone"
+        source_domain_counts[domain] = source_domain_counts.get(domain, 0) + 1
+
+        profile = meta.vehicle_profile if meta else "unknown"
+        vehicle_profile_counts[profile] = vehicle_profile_counts.get(profile, 0) + 1
+
+        dev = f"{meta.device_manufacturer} {meta.device_model}".strip() if meta else "unknown"
+        device_counts[dev] = device_counts.get(dev, 0) + 1
+
+        trip_key = f.stem
+        trips_info.append({
+            "trip_id": trip_key,
+            "file_name": f.name,
+            "file_path": str(f),
+            "valid_schema": audit.valid_schema,
+            "source_domain": domain,
+            "vehicle_profile": profile,
+            "device": dev,
+            "duration_s": round(audit.duration_s, 2),
+            "records_count": audit.total_lines,
+            "gnss_count": audit.gnss_records_count,
+            "imu_count": audit.imu_records_count,
+            "avg_imu_rate_hz": round(audit.avg_imu_rate_hz, 1),
+            "potholes_count": pots,
+            "speed_breakers_count": bumps,
+            "mount_shifts_count": audit.mount_shifts_count,
+            "outage_episodes_count": audit.outage_episodes_count,
+            "anomalies": audit.anomalies_detected,
+        })
+
+    # Sensor rate distribution
+    if imu_rates:
+        rate_dist = {
+            "mean_hz": round(float(np.mean(imu_rates)), 1),
+            "median_hz": round(float(np.median(imu_rates)), 1),
+            "min_hz": round(float(np.min(imu_rates)), 1),
+            "max_hz": round(float(np.max(imu_rates)), 1),
+            "p10_hz": round(float(np.percentile(imu_rates, 10)), 1),
+            "p90_hz": round(float(np.percentile(imu_rates, 90)), 1),
+        }
+    else:
+        rate_dist = {"mean_hz": 0.0, "median_hz": 0.0, "min_hz": 0.0, "max_hz": 0.0, "p10_hz": 0.0, "p90_hz": 0.0}
+
+    # Grouped train/val/test splits to avoid trip/vehicle data leakage
+    rng = np.random.RandomState(seed)
+    valid_trips = [t for t in trips_info if t.get("valid_schema", False)]
+    # Group by device + profile or unique trip stem
+    groups: dict[str, list[str]] = {}
+    for t in valid_trips:
+        group_key = t["device"] + "_" + t["vehicle_profile"] if t["device"] != "unknown" else t["trip_id"]
+        groups.setdefault(group_key, []).append(t["trip_id"])
+
+    group_keys = list(groups.keys())
+    rng.shuffle(group_keys)
+
+    n_groups = len(group_keys)
+    n_train = max(1, int(round(n_groups * train_ratio))) if n_groups > 2 else max(1, n_groups - 1)
+    n_val = max(1, int(round(n_groups * val_ratio))) if (n_groups - n_train) >= 2 else (1 if n_groups > n_train else 0)
+    
+    train_groups = set(group_keys[:n_train])
+    val_groups = set(group_keys[n_train:n_train + n_val])
+    test_groups = set(group_keys[n_train + n_val:])
+
+    split_manifest: dict[str, list[str]] = {"train": [], "val": [], "test": []}
+    for g_key, trip_ids in groups.items():
+        if g_key in train_groups:
+            split_manifest["train"].extend(trip_ids)
+        elif g_key in val_groups:
+            split_manifest["val"].extend(trip_ids)
+        else:
+            split_manifest["test"].extend(trip_ids)
+
+    # For each trip, annotate split assignment
+    for t in trips_info:
+        tid = t.get("trip_id")
+        if tid in split_manifest["train"]:
+            t["split"] = "train"
+        elif tid in split_manifest["val"]:
+            t["split"] = "val"
+        elif tid in split_manifest["test"]:
+            t["split"] = "test"
+        else:
+            t["split"] = "unassigned"
+
+    result = {
+        "status": "success",
+        "summary": {
+            "total_files": len(files),
+            "valid_trips": len(valid_trips),
+            "total_records": total_records,
+            "total_duration_hours": round(total_duration_s / 3600.0, 3),
+        },
+        "data_quality": {
+            "valid_schema_count": valid_schema_count,
+            "invalid_schema_count": invalid_schema_count,
+            "trips_with_anomalies": trips_with_anomalies,
+        },
+        "missing_sensors": {
+            "trips_missing_gnss": trips_missing_gnss,
+            "trips_missing_imu": trips_missing_imu,
+            "trips_missing_gravity": trips_missing_gravity,
+        },
+        "sensor_rate_distribution": rate_dist,
+        "route_event_coverage": {
+            "total_potholes": total_potholes,
+            "total_speed_breakers": total_speed_breakers,
+            "total_mount_shifts": total_mount_shifts,
+            "total_outage_episodes": total_outages,
+        },
+        "source_domains": {
+            "domain_counts": source_domain_counts,
+            "vehicle_profile_counts": vehicle_profile_counts,
+            "device_counts": device_counts,
+        },
+        "splits": {
+            "train_count": len(split_manifest["train"]),
+            "val_count": len(split_manifest["val"]),
+            "test_count": len(split_manifest["test"]),
+            "train_trips": sorted(split_manifest["train"]),
+            "val_trips": sorted(split_manifest["val"]),
+            "test_trips": sorted(split_manifest["test"]),
+        },
+        "trips": trips_info,
+    }
+
+    if out_manifest_path:
+        out_p = Path(out_manifest_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        out_p.write_text(json.dumps(result, indent=2), encoding="utf-8")
+
+    return result
+

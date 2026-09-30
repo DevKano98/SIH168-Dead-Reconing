@@ -43,6 +43,19 @@ class ContinuumLocationEngine(
         EXTERNAL_IMU
     }
 
+    data class EngineDiagnostics(
+        val imuSamplesCount: Long,
+        val gnssFixesCount: Long,
+        val deadReckonStepsCount: Long,
+        val lastInferenceLatencyUs: Long,
+        val avgInferenceLatencyUs: Long,
+        val lastMapMatchLatencyUs: Long,
+        val avgMapMatchLatencyUs: Long,
+        val estimatedMemoryKb: Long,
+        val currentProfile: String,
+        val currentState: String
+    )
+
     interface LocationUpdateCallback {
         fun onLocationUpdate(location: Location, isFallback: Boolean, state: FallbackState)
         fun onLocationUpdate(location: Location, isFallback: Boolean, state: FallbackState, matchResult: MapMatchResult?) {
@@ -83,6 +96,41 @@ class ContinuumLocationEngine(
         private set
     var latestMatchResult: MapMatchResult? = null
         private set
+
+    // Performance & Diagnostics instrumentation
+    var imuSamplesCount = 0L
+        private set
+    var gnssFixesCount = 0L
+        private set
+    var deadReckonStepsCount = 0L
+        private set
+    var lastInferenceLatencyUs = 0L
+        private set
+    var totalInferenceLatencyUs = 0L
+        private set
+    var lastMapMatchLatencyUs = 0L
+        private set
+    var totalMapMatchLatencyUs = 0L
+        private set
+
+    fun getDiagnostics(): EngineDiagnostics {
+        val avgInf = if (deadReckonStepsCount > 0) totalInferenceLatencyUs / deadReckonStepsCount else 0L
+        val avgMm = if (deadReckonStepsCount > 0) totalMapMatchLatencyUs / deadReckonStepsCount else 0L
+        val runtime = Runtime.getRuntime()
+        val memKb = (runtime.totalMemory() - runtime.freeMemory()) / 1024L
+        return EngineDiagnostics(
+            imuSamplesCount = imuSamplesCount,
+            gnssFixesCount = gnssFixesCount,
+            deadReckonStepsCount = deadReckonStepsCount,
+            lastInferenceLatencyUs = lastInferenceLatencyUs,
+            avgInferenceLatencyUs = avgInf,
+            lastMapMatchLatencyUs = lastMapMatchLatencyUs,
+            avgMapMatchLatencyUs = avgMm,
+            estimatedMemoryKb = memKb,
+            currentProfile = vehicleProfile.name,
+            currentState = currentState.name
+        )
+    }
 
     // Recovery blending
     private var recoveryStartRealtimeMs = 0L
@@ -150,6 +198,7 @@ class ContinuumLocationEngine(
     }
 
     override fun onLocationChanged(location: Location) {
+        gnssFixesCount++
         val nowMs = SystemClock.elapsedRealtime()
         lastFixElapsedRealtimeMs = nowMs
         callback?.onRawGnss(location)
@@ -204,6 +253,7 @@ class ContinuumLocationEngine(
     }
 
     override fun onSensorChanged(event: SensorEvent) {
+        imuSamplesCount++
         callback?.onRawImu(event.sensor.type, event.timestamp, event.values.copyOf())
         val nowMs = SystemClock.elapsedRealtime()
         val timeSinceFix = nowMs - lastFixElapsedRealtimeMs
@@ -249,6 +299,7 @@ class ContinuumLocationEngine(
     }
 
     private fun deadReckonStep(gyroEvent: SensorEvent) {
+        deadReckonStepsCount++
         val dtS = if (lastImuTimestampNs > 0) {
             (gyroEvent.timestamp - lastImuTimestampNs) / 1_000_000_000.0
         } else 0.02
@@ -259,8 +310,12 @@ class ContinuumLocationEngine(
         val deltaBearingDeg = Math.toDegrees(yawRateRad * dtS)
         currentBearingDeg = (((currentBearingDeg + deltaBearingDeg) % 360.0 + 360.0) % 360.0).toFloat()
 
-        // Predict speed from portable tree runner
+        // Predict speed from portable tree runner with microsecond latency measurement
+        val t0Inf = System.nanoTime()
         val prediction = portableRunner.predict(summarizeImuWindow())
+        lastInferenceLatencyUs = (System.nanoTime() - t0Inf) / 1000L
+        totalInferenceLatencyUs += lastInferenceLatencyUs
+
         var predictedSpeed = if (prediction.isStopped) 0.0 else prediction.speedMps
 
         // Profile-specific modifications
@@ -299,8 +354,11 @@ class ContinuumLocationEngine(
         currentLon += deltaEast / metersPerDegLon
         currentUncertaintyM += (prediction.speedStdMps * dtS).toFloat()
 
-        // Map Matching Soft Snapping if Pack Loaded
+        // Map Matching Soft Snapping if Pack Loaded with latency timing
+        val t0Mm = System.nanoTime()
         updateMapMatching()
+        lastMapMatchLatencyUs = (System.nanoTime() - t0Mm) / 1000L
+        totalMapMatchLatencyUs += lastMapMatchLatencyUs
         latestMatchResult?.let { match ->
             if (match.matched && match.matchConfidence >= 0.70 && !match.isAmbiguous && match.snappedLat != null && match.snappedLon != null) {
                 // Softly pull towards road centerline to suppress lateral gyro integration drift

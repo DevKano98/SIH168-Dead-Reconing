@@ -4,12 +4,17 @@ The canonical status is maintained in [CURRENT_STATUS.md](CURRENT_STATUS.md). Th
 
 ## Current delivery
 
-- Verified, buildable Android project producing `android/app/build/outputs/apk/debug/app-debug.apk` (1.09 MB) with embedded trained model (`motion_portable.json`) and regional road pack (`sample_road_pack.json`).
-- On-device Kotlin dead reckoning (`ContinuumLocationEngine`), offline vector road map (`MapView`), foreground trip recorder (`TrackingService`), and cooperative BLE hazard sharing (`TrafficBleManager`).
-- Working Python research SDK, trained motion model, and 110 passed unit and integration tests.
+- Verified, buildable Android project producing `android/app/build/outputs/apk/debug/app-debug.apk` (1.10 MB, SHA-256: `6d894a74...`) with embedded trained model (`motion_portable.json`) and regional road pack (`sample_road_pack.json`).
+- On-device Kotlin dead reckoning (`ContinuumLocationEngine`) with microsecond latency instrumentation, offline vector road map (`MapView`), foreground trip recorder (`TrackingService`), route category selection, and cooperative BLE hazard sharing (`TrafficBleManager`) with relay statistics HUD (direct ~10-30m range).
+- Working Python research SDK, trained motion model, and 122 passed unit and integration tests.
+- 17-category synthetic Indian-road expansion generator (`continuum_idr/synthetic_dataset.py`, `idr generate-synthetic-dataset`).
+- Leakage-safe trip folder validation and train/val/test splitting (`continuum_idr/phone_data.py`, `idr validate-field-folder`).
+- Ground-truth reference trajectory evaluation engine (`continuum_idr/reference_eval.py`, `idr evaluate-reference`).
+- Comparative candidate architecture experimentation framework (`continuum_idr/experiments.py`, `idr run-experiments`).
+- Windows ADB device validation automation (`tools/adb/device_validate.ps1`, `tools/adb/device_validate.bat`).
+- Standardized protocols in `docs/FIELD_TEST_PLANS.md` and verification gates in `docs/DEVICE_VALIDATION_CHECKLIST.md`.
 - Multi-stage deterministic Python/Kotlin parity test suite (`ParityTest.kt` and `test_parity.py`).
 - Deterministic 20-scenario synthetic generator (`continuum_idr/synthetic.py`) and CLI `idr synthetic`.
-- Indian-road collection and validation pipeline (`continuum_idr/phone_data.py`, `docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md`).
 - Local cooperative V2X traffic gateway (`continuum_idr/traffic_gateway.py`).
 - Reproducible IO-VNBD outage evaluator and checked-in evidence.
 - Continuum Studio replay at `/`, driver-facing view at `/mobile`, and developer portal at `/docs`.

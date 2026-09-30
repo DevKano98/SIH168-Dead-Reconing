@@ -134,11 +134,11 @@ class IDREngine:
                 )
         self._last_imu_s = sample.timestamp_s
 
-        update_period = 1.0 / self.config.model_update_hz
         if (
-            self._x is not None
+            self.config.model_update_hz > 0
+            and self._x is not None
             and len(self._window) == self.model.window_samples
-            and (self._last_model_s is None or sample.timestamp_s - self._last_model_s >= update_period - 1e-6)
+            and (self._last_model_s is None or sample.timestamp_s - self._last_model_s >= (1.0 / self.config.model_update_hz) - 1e-6)
         ):
             prediction = self.model.predict(np.stack(self._window))
             variance = max(prediction.speed_std_mps**2, 0.25)

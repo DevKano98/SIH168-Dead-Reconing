@@ -4,6 +4,47 @@
 
 **Canonical experiment:** `iovnbd-vtb-heldout-p0`
 
+## Physical Validation Readiness & Measured Performance Analysis Update — 2026-09-30
+
+The physical validation, field ingestion, reference evaluation, candidate comparison architectures, and Android instrumentation have been implemented:
+
+1. **17-Category Synthetic Indian-Road Benchmark Pack (`idr generate-synthetic-dataset`)**:
+   - Generates deterministic, randomized scenarios across 17 distinct operational conditions (smooth highway, city roads, stop-go, intersections, rough/patched roads, potholes, speed breakers, engine idle, sudden braking, tunnels, multipath, parking ramps, reverse crawl, motorcycle lean/vibration, mount shifts, 100/200 Hz IMU).
+   - Generates JSONL trip logs and standardized `dataset_manifest.json` with mandatory simulator notice: *"Synthetic results demonstrate simulator behavior only. They do not demonstrate real-road accuracy."*
+
+2. **Folder-Level Field Ingestion & Split Tooling (`idr validate-field-folder`)**:
+   - Audits entire directories of on-device recorded JSONL trips.
+   - Computes data quality audits, sensor rate distributions (mean/median/p10/p90 Hz), route/surface event coverage, and source domain breakdowns.
+   - Generates grouped train/val/test splits grouped strictly by vehicle/device to prevent data leakage.
+
+3. **Ground-Truth Reference Trajectory Evaluation Engine (`idr evaluate-reference`)**:
+   - Evaluates estimated trips against external CSV/JSONL reference tracks (e.g. RTK GNSS).
+   - Computes endpoint error, drift % of distance traveled, max/RMSE horizontal error, speed/heading RMSE, along-track and cross-track errors, and outage recovery settling time.
+   - Exports point-by-point error CSVs and Markdown evaluation reports with strict provenance labeling (*telemetry only*, *external_reference*, or *synthetic_ground_truth*).
+
+4. **Candidate Architecture Comparison Framework (`idr run-experiments`)**:
+   - Systematically benchmarks 5 candidate architectures (`direct_speed_model`, `last_speed_gyro`, `map_matched`, `calibrated_alignment`, `disturbance_filter`).
+   - Generates publication-grade Markdown tables and JSON summaries.
+   - Strictly preserves historical IO-VNBD benchmark figures (80.32% median drift, 0% <10% pass rate, 354.25m error) and highlights the physical validation boundary.
+
+5. **Android App Performance Instrumentation & BLE Test Mode**:
+   - Microsecond inference latency (`lastInferenceLatencyUs`, `avgInferenceLatencyUs`), map-match latency, and heap memory tracking (`EngineDiagnostics`).
+   - In-app route category selector dropdown before recording.
+   - Live telemetry and performance HUD in `MainActivity`.
+   - BLE test hazard generators (`generateTestHazard`), relay statistics counters (sent, received, relayed, duplicates, expired) and HUD with mandatory local range disclaimer notice: *"BLE operates within direct ~10-30m local line-of-sight only, not long-range cellular."*
+   - Closing diagnostics record logged to JSONL upon trip completion.
+
+6. **Windows ADB Automation Tooling**:
+   - `tools/adb/device_validate.ps1` and `tools/adb/device_validate.bat` for connection testing, APK installation, hardware/sensor profiling, trip log pulling, and logcat diagnostics capture.
+   - Comprehensive test protocols in `docs/FIELD_TEST_PLANS.md` and verification gates in `docs/DEVICE_VALIDATION_CHECKLIST.md`.
+
+7. **Verification & Baseline Invariants**:
+   - Python test suite: 122/122 tests passing.
+   - Kotlin unit tests: `ParityTest`, `RoadGraphPackTest`, `InstrumentationTest` passing 100% via `./gradlew.bat testDebugUnitTest`.
+   - Android debug APK built cleanly (`1,102,666 bytes`, SHA-256: `6d894a740ffb5c35a82e8d9b764cb4282ceb5d8b0535003e985361f16aa7ffaa`).
+   - Model weights hash `c98f71fd9b20af88f3079a00bf66377d5c055262a6367e4dd1cd009152a96072` verified in APK assets.
+   - Historical IO-VNBD benchmark figures (80.32% median drift, 0% <10% pass rate) strictly preserved.
+
 ## Interactive backend & frontend update — 2026-09-30
 
 The new `/api/runtime` API processes raw recorded IMU/GNSS through a running SDK.

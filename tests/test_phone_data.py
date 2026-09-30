@@ -55,3 +55,29 @@ def test_markdown_validation_report(sample_phone_log: Path, tmp_path: Path):
 def test_phone_log_missing_file_raises():
     with pytest.raises(FileNotFoundError):
         PhoneLogParser("non_existent_trip_file.jsonl")
+
+
+def test_validate_trip_folder(tmp_path: Path):
+    from continuum_idr.phone_data import validate_trip_folder
+
+    # Generate 3 trips in a folder
+    trips_dir = tmp_path / "trips"
+    trips_dir.mkdir()
+    for i, scen in enumerate(["tunnel_total_gnss_blackout_60s", "indian_road_severe_potholes", "straight_constant_speed_cruise"]):
+        s = generate_scenario(scen, duration_s=15.0, seed=40 + i)
+        export_scenario_jsonl(s, trips_dir / f"trip_{i:02d}.jsonl")
+
+    manifest_out = tmp_path / "folder_manifest.json"
+    result = validate_trip_folder(trips_dir, out_manifest_path=manifest_out)
+
+    assert result["status"] == "success"
+    assert result["summary"]["total_files"] == 3
+    assert result["summary"]["valid_trips"] == 3
+    assert result["data_quality"]["valid_schema_count"] == 3
+    assert result["sensor_rate_distribution"]["mean_hz"] > 0
+    assert result["splits"]["train_count"] >= 1
+    assert manifest_out.exists()
+
+    saved_data = json.loads(manifest_out.read_text(encoding="utf-8"))
+    assert saved_data["summary"]["total_files"] == 3
+

@@ -26,6 +26,14 @@ data class TrafficHazardReport(
     val vehicleId: String
 )
 
+data class BleRelayStats(
+    val sentCount: Long,
+    val receivedCount: Long,
+    val relayedCount: Long,
+    val duplicateCount: Long,
+    val expiredCount: Long
+)
+
 /**
  * Handles localized Vehicle-to-Vehicle (V2V) cooperative hazard sharing
  * over Bluetooth Low Energy (BLE) without cellular dependency.
@@ -43,6 +51,14 @@ class TrafficBleManager(private val context: Context) {
     private var scanner: BluetoothLeScanner? = null
     private var isAdvertising = false
     private var isScanning = false
+
+    // Relay statistics & deduplication
+    private var sentCount = 0L
+    private var receivedCount = 0L
+    private var relayedCount = 0L
+    private var duplicateCount = 0L
+    private var expiredCount = 0L
+    private val recentHazards = LinkedHashMap<String, Long>()
 
     private val SERVICE_UUID = UUID.fromString("0000C1D0-0000-1000-8000-00805F9B34FB")
     private val CONTINUUM_MANUFACTURER_ID = 0x0C1D // "CID"
@@ -64,10 +80,55 @@ class TrafficBleManager(private val context: Context) {
             result?.scanRecord?.let { record ->
                 val data = record.getManufacturerSpecificData(CONTINUUM_MANUFACTURER_ID)
                 if (data != null && data.size >= 18) {
-                    parseHazardPayload(data)?.let { listener?.onHazardReceived(it) }
+                    parseHazardPayload(data)?.let { report ->
+                        receivedCount++
+                        val now = System.currentTimeMillis()
+                        val key = "${report.hazardType}_${(report.latitude * 1000).toInt()}_${(report.longitude * 1000).toInt()}"
+                        val lastSeen = recentHazards[key]
+                        if (lastSeen != null && now - lastSeen < 30_000L) {
+                            duplicateCount++
+                            return@let
+                        }
+                        if (lastSeen != null && now - lastSeen >= 60_000L) {
+                            expiredCount++
+                        }
+                        recentHazards[key] = now
+                        listener?.onHazardReceived(report)
+                    }
                 }
             }
         }
+    }
+
+    fun getRelayStats(): BleRelayStats = BleRelayStats(
+        sentCount = sentCount,
+        receivedCount = receivedCount,
+        relayedCount = relayedCount,
+        duplicateCount = duplicateCount,
+        expiredCount = expiredCount
+    )
+
+    fun generateTestHazard(hazardType: String, severity: Double, lat: Double, lon: Double): TrafficHazardReport {
+        broadcastHazard(hazardType, severity, lat, lon)
+        val report = TrafficHazardReport(
+            hazardType = hazardType,
+            severity = severity,
+            latitude = lat,
+            longitude = lon,
+            timestampMs = System.currentTimeMillis(),
+            vehicleId = "simulated_local_node"
+        )
+        listener?.onHazardReceived(report)
+        return report
+    }
+
+    fun resetStats() {
+        sentCount = 0L
+        receivedCount = 0L
+        relayedCount = 0L
+        duplicateCount = 0L
+        expiredCount = 0L
+        recentHazards.clear()
     }
 
     fun start(listener: TrafficReportListener) {
@@ -121,6 +182,7 @@ class TrafficBleManager(private val context: Context) {
     }
 
     fun broadcastHazard(hazardType: String, severity: Double, lat: Double, lon: Double) {
+        sentCount++
         if (advertiser == null) return
         val typeByte: Byte = when (hazardType) {
             "GNSS_OUTAGE" -> 1

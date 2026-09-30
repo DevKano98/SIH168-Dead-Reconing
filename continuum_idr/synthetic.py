@@ -420,6 +420,9 @@ def export_scenario_jsonl(scenario: SyntheticScenarioResult, path: str | Path) -
         "vehicle_profile": scenario.metadata.get("vehicle_profile", "car"),
         "start_time_ms": 1700000000000,
     }
+    for k, v in scenario.metadata.items():
+        if k not in meta_line:
+            meta_line[k] = v
     lines.append(json.dumps(meta_line))
 
     # Interleave IMU and GNSS fixes chronologically

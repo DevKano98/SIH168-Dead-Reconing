@@ -140,19 +140,24 @@ Throughput checks demonstrate software timing on the measured computer. They do 
 ## Android Application & Build Artifacts
 
 The [`android/`](android/) directory is a verified, standalone Gradle Android application project:
-- **Build output:** `android/app/build/outputs/apk/debug/app-debug.apk` (1,094,549 bytes)
-- **Model verification:** Packages trained `motion_portable.json` (SHA-256: `c98f71fd...`, verified byte-exact parity with Python bundle).
+- **Build output:** `android/app/build/outputs/apk/debug/app-debug.apk` (1,102,666 bytes, SHA-256: `6d894a740ffb5c35a82e8d9b764cb4282ceb5d8b0535003e985361f16aa7ffaa`)
+- **Model verification:** Packages trained `motion_portable.json` (SHA-256: `c98f71fd9b20af88f3079a00bf66377d5c055262a6367e4dd1cd009152a96072`, verified byte-exact parity with Python bundle).
 - **Offline road maps:** Vector `MapView` renders topological road segments, vehicle heading, breadcrumb trail, uncertainty ellipse, and scale bar completely offline.
 - **On-device dead reckoning:** `ContinuumLocationEngine` handles causal 2-second IMU windowing, tree inference, alignment estimation, tilt shift detection ($>15^\circ$), gradual GNSS recovery blending, motorcycle lean angle compensation, parking crawl/reverse heuristics, and road snapping.
-- **Cooperative traffic sharing:** `TrafficBleManager` provides Bluetooth Low Energy (BLE) peer-to-peer hazard beaconing (`GNSS_OUTAGE`, `SPEED_BREAKER`, `POTHOLE`, `TRAFFIC_JAM`).
-- **Foreground trip recorder:** `TrackingService` logs Schema 1.0.0 JSONL trip files with Line 1 metadata, model SHA-256 hash, and raw IMU/GNSS.
-- **Unit test suite:** `android/app/src/test/java/ai/continuum/idr/` executes `ParityTest` and `RoadGraphPackTest` with 100% pass rate.
+- **Performance instrumentation:** Microsecond latency timers (`lastInferenceLatencyUs`, `avgInferenceLatencyUs`), map-match latency, and heap memory tracking (`EngineDiagnostics`).
+- **Cooperative traffic sharing:** `TrafficBleManager` provides Bluetooth Low Energy (BLE) peer-to-peer hazard beaconing (`GNSS_OUTAGE`, `SPEED_BREAKER`, `POTHOLE`, `TRAFFIC_JAM`), controlled test generators, and relay statistics HUD (Notice: direct ~10–30m local line-of-sight only, not cellular range).
+- **Foreground trip recorder:** `TrackingService` logs Schema 1.0.0 JSONL trip files with Line 1 metadata, vehicle profile, route category, model SHA-256 hash, raw IMU/GNSS, and closing diagnostics.
+- **Unit test suite:** `android/app/src/test/java/ai/continuum/idr/` executes `ParityTest`, `RoadGraphPackTest`, and `InstrumentationTest` with 100% pass rate.
 
-Build and test commands:
+Build, test, and validation commands:
 ```powershell
 cd android
 .\gradlew.bat testDebugUnitTest    # Runs Kotlin unit tests
 .\gradlew.bat assembleDebug         # Produces debug APK
+cd ..
+
+# Automate device checks, installation, profiling, and log extraction:
+.\tools\adb\device_validate.ps1 -Action all
 ```
 
 ## Repository guide
@@ -160,14 +165,20 @@ cd android
 | Path | Purpose |
 | --- | --- |
 | `continuum_idr/` | Python SDK, evaluation, CLI, synthetic generator, traffic gateway, Studio |
+| `continuum_idr/synthetic_dataset.py` | 17-category synthetic Indian-road expansion generator |
+| `continuum_idr/reference_eval.py` | Ground-truth reference trajectory evaluation engine (RTK GNSS / CSV) |
+| `continuum_idr/experiments.py` | Comparative estimator candidate architecture benchmarking suite |
 | `continuum_idr/studio_static/` | Studio, driver view, and developer portal |
 | `models/motion_p0/` | Trained research model and manifest |
 | `models/portable/` | Portable JSON model representation (`motion_portable.json`) |
 | `artifacts/evaluation/` | Checked-in IO-VNBD metrics, replay, and figures |
 | `android/` | Complete Android Gradle project and Kotlin application source |
+| `tools/adb/` | Windows ADB automation tools (`device_validate.ps1`, `device_validate.bat`) |
+| `docs/FIELD_TEST_PLANS.md` | Repeatable protocols for highway, urban, potholes, tunnels, parking, bikes, external IMUs |
+| `docs/DEVICE_VALIDATION_CHECKLIST.md` | Pre-flight and post-flight operational verification gates |
 | `docs/INDIAN_ROAD_COLLECTION_PROTOCOL.md` | Field data collection & testing protocol for Indian road conditions |
 | `docs/idr/` | Product, architecture, evaluation, and roadmap documents |
-| `tests/` | Python unit and integration test suite (110 passing tests) |
+| `tests/` | Python unit and integration test suite (122 passing tests) |
 
 ## Supported scope and limitations
 

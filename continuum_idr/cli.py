@@ -89,6 +89,32 @@ def main(argv: list[str] | None = None) -> int:
     traffic_gw_cmd.add_argument("--host", default="127.0.0.1", help="Gateway bind host")
     traffic_gw_cmd.add_argument("--port", type=int, default=8080, help="Gateway bind port")
 
+    synth_pack_cmd = sub.add_parser("generate-synthetic-dataset", help="generate comprehensive 17-category synthetic Indian-road dataset")
+    synth_pack_cmd.add_argument("--output", default="artifacts/synthetic_dataset", help="Output directory")
+    synth_pack_cmd.add_argument("--trips-per-category", type=int, default=1, help="Number of trips per category")
+    synth_pack_cmd.add_argument("--seed", type=int, default=2026, help="Deterministic random seed")
+
+    val_folder_cmd = sub.add_parser("validate-field-folder", help="audit directory of phone/synthetic trips and generate splits")
+    val_folder_cmd.add_argument("folder", help="Directory containing JSONL trip logs")
+    val_folder_cmd.add_argument("--output", default=None, help="Path to write JSON manifest")
+    val_folder_cmd.add_argument("--train-ratio", type=float, default=0.70)
+    val_folder_cmd.add_argument("--val-ratio", type=float, default=0.15)
+    val_folder_cmd.add_argument("--test-ratio", type=float, default=0.15)
+    val_folder_cmd.add_argument("--seed", type=int, default=42)
+
+    eval_ref_cmd = sub.add_parser("evaluate-reference", help="benchmark trip against high-precision reference trajectory")
+    eval_ref_cmd.add_argument("trip", help="Path to estimated phone JSONL trip log")
+    eval_ref_cmd.add_argument("--reference", default=None, help="Path to reference CSV or JSONL ground-truth")
+    eval_ref_cmd.add_argument("--output-csv", default=None, help="Path to write point-by-point error CSV")
+    eval_ref_cmd.add_argument("--output-report", default=None, help="Path to write evaluation markdown report")
+
+    exp_cmd = sub.add_parser("run-experiments", help="comparatively benchmark candidate estimator configurations")
+    exp_cmd.add_argument("--model", default="models/motion_p0", help="Path to trained model bundle")
+    exp_cmd.add_argument("--candidates", nargs="*", default=None, help="Candidate names (default: all 5)")
+    exp_cmd.add_argument("--scenarios", nargs="*", default=None, help="Scenario IDs (default: standard suite)")
+    exp_cmd.add_argument("--output", default=None, help="Path to write JSON experiment results")
+    exp_cmd.add_argument("--report", default=None, help="Path to write markdown comparison report")
+
     args = parser.parse_args(argv)
     if args.command == "audit":
         report = audit_pairs(args.dataset)
@@ -332,6 +358,75 @@ def main(argv: list[str] | None = None) -> int:
         from .traffic_gateway import run_gateway
 
         run_gateway(host=args.host, port=args.port)
+    elif args.command == "generate-synthetic-dataset":
+        from .synthetic_dataset import generate_synthetic_dataset_pack
+
+        manifest = generate_synthetic_dataset_pack(
+            output_dir=args.output,
+            trips_per_category=args.trips_per_category,
+            seed=args.seed,
+        )
+        print(json.dumps({
+            "status": "success",
+            "output_dir": args.output,
+            "categories_count": manifest["categories_count"],
+            "total_trips": manifest["total_trips"],
+            "total_duration_hours": manifest["total_duration_hours"],
+            "total_distance_km": manifest["total_distance_km"],
+        }, indent=2))
+    elif args.command == "validate-field-folder":
+        from .phone_data import validate_trip_folder
+
+        res = validate_trip_folder(
+            folder_path=args.folder,
+            train_ratio=args.train_ratio,
+            val_ratio=args.val_ratio,
+            test_ratio=args.test_ratio,
+            seed=args.seed,
+            out_manifest_path=args.output,
+        )
+        print(json.dumps({
+            "status": "success",
+            "summary": res["summary"],
+            "data_quality": res["data_quality"],
+            "missing_sensors": res["missing_sensors"],
+            "splits": {
+                "train_count": res["splits"]["train_count"],
+                "val_count": res["splits"]["val_count"],
+                "test_count": res["splits"]["test_count"],
+            },
+        }, indent=2))
+    elif args.command == "evaluate-reference":
+        from .reference_eval import evaluate_trajectory_against_reference
+
+        rep = evaluate_trajectory_against_reference(
+            trip_path=args.trip,
+            reference_path=args.reference,
+            out_csv_path=args.output_csv,
+            out_report_path=args.output_report,
+        )
+        print(json.dumps(rep.to_dict(), indent=2))
+    elif args.command == "run-experiments":
+        from .experiments import format_experiment_comparison_markdown, run_experiment_suite
+
+        suite = run_experiment_suite(
+            candidate_names=args.candidates,
+            evaluation_scenarios=args.scenarios,
+            model_path=args.model,
+        )
+        if args.output:
+            _write_json(Path(args.output), suite)
+        if args.report:
+            md = format_experiment_comparison_markdown(suite)
+            Path(args.report).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.report).write_text(md, encoding="utf-8")
+        print(json.dumps({
+            "status": "success",
+            "provenance": suite["provenance"],
+            "notice": suite["notice"],
+            "candidates_evaluated": suite["candidates_evaluated"],
+            "results": suite["results"],
+        }, indent=2))
     return 0
 
 

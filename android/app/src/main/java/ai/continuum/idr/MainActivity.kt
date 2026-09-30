@@ -27,13 +27,20 @@ class MainActivity : Activity() {
 
     private lateinit var statusText: TextView
     private lateinit var telemetryText: TextView
+    private lateinit var diagnosticsText: TextView
     private lateinit var stateBadge: TextView
     private lateinit var profileSpinner: Spinner
+    private lateinit var routeSpinner: Spinner
+    private lateinit var bleHudText: TextView
     private lateinit var mapView: MapView
     private lateinit var tripsContainer: LinearLayout
 
     private var selectedProfile = "CAR"
+    private var selectedRouteCategory = "Highway Cruise"
     private var isRecording = false
+    private var bleTestManager: TrafficBleManager? = null
+    private var lastObservedLat = 12.9716
+    private var lastObservedLon = 77.5946
 
     private val statusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -45,6 +52,8 @@ class MainActivity : Activity() {
                 TrackingService.ACTION_TELEMETRY -> {
                     val lat = intent.getDoubleExtra("lat", 0.0)
                     val lon = intent.getDoubleExtra("lon", 0.0)
+                    lastObservedLat = lat
+                    lastObservedLon = lon
                     val speedMps = intent.getFloatExtra("speed_mps", 0f)
                     val speedKmh = speedMps * 3.6f
                     val bearingDeg = intent.getFloatExtra("bearing_deg", 0f)
@@ -54,6 +63,11 @@ class MainActivity : Activity() {
                     val segmentId = intent.getStringExtra("segment_id")
                     val matchConf = intent.getDoubleExtra("match_confidence", 0.0)
                     val leanAngleDeg = intent.getDoubleExtra("lean_angle_deg", 0.0)
+
+                    val infLatencyUs = intent.getLongExtra("inf_latency_us", 0L)
+                    val avgInfLatencyUs = intent.getLongExtra("avg_inf_latency_us", 0L)
+                    val memKb = intent.getLongExtra("mem_kb", 0L)
+                    val imuSamples = intent.getLongExtra("imu_samples", 0L)
 
                     // Update State Badge
                     stateBadge.text = state
@@ -81,6 +95,10 @@ class MainActivity : Activity() {
                     val leanInfo = if (Math.abs(leanAngleDeg) > 1.0) " | Lean: %.1f°".format(leanAngleDeg) else ""
                     telemetryText.text = "%.1f km/h | %03.0f° | ±%.1fm%s\nLat: %.6f, Lon: %.6f\n%s".format(
                         speedKmh, bearingDeg, accuracyM, leanInfo, lat, lon, mapInfo
+                    )
+
+                    diagnosticsText.text = "Inference: %d µs (avg: %d µs) | Heap: ~%d KB | Samples: %d".format(
+                        infLatencyUs, avgInfLatencyUs, memKb, imuSamples
                     )
 
                     // Update Map View
@@ -132,6 +150,16 @@ class MainActivity : Activity() {
         }
         root.addView(telemetryText)
 
+        // Performance Diagnostics readout
+        diagnosticsText = TextView(this).apply {
+            text = "Inference: 0 µs | Heap: ~0 KB | Samples: 0"
+            textSize = 12f
+            setTextColor(Color.parseColor("#38BDF8"))
+            setPadding(0, 0, 0, 8)
+            gravity = Gravity.CENTER
+        }
+        root.addView(diagnosticsText)
+
         // Offline Vector Map View
         mapView = MapView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -175,6 +203,41 @@ class MainActivity : Activity() {
         profileRow.addView(profileSpinner)
         root.addView(profileRow)
 
+        // Route Category Selector Row
+        val routeRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, 16)
+        }
+        val routeLabel = TextView(this).apply {
+            text = "Route Category: "
+            setTextColor(Color.WHITE)
+            textSize = 14f
+        }
+        routeSpinner = Spinner(this).apply {
+            val categories = arrayOf(
+                "Highway Cruise",
+                "City Arterial",
+                "Stop & Go Traffic",
+                "Potholes & Patched",
+                "Speed Breakers",
+                "Underpass / Tunnel",
+                "Parking Ramp & Reverse",
+                "Motorcycle High Lean",
+                "Engine Idle Vibration"
+            )
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, categories)
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    selectedRouteCategory = categories[position]
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+        }
+        routeRow.addView(routeLabel)
+        routeRow.addView(routeSpinner)
+        root.addView(routeRow)
+
         // Action Buttons Row (Start / Stop)
         val buttonsRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -207,10 +270,82 @@ class MainActivity : Activity() {
             text = "Ready to record trip"
             textSize = 13f
             setTextColor(Color.parseColor("#94A3B8"))
-            setPadding(0, 16, 0, 16)
+            setPadding(0, 12, 0, 8)
             gravity = Gravity.CENTER
         }
         root.addView(statusText)
+
+        // BLE V2V Section
+        val bleHeader = TextView(this).apply {
+            text = "Cooperative V2V Traffic (BLE Mesh)"
+            textSize = 14f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.parseColor("#A7F3D0"))
+            setPadding(0, 8, 0, 2)
+        }
+        root.addView(bleHeader)
+
+        val bleNotice = TextView(this).apply {
+            text = "Notice: BLE operates within direct ~10-30m local line-of-sight only, not long-range cellular."
+            textSize = 11f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(0, 0, 0, 6)
+        }
+        root.addView(bleNotice)
+
+        bleHudText = TextView(this).apply {
+            text = "Relay HUD: Sent: 0 | Recv: 0 | Duplicates: 0 | Expired: 0"
+            textSize = 12f
+            setTextColor(Color.parseColor("#FDE047"))
+            setPadding(0, 0, 0, 8)
+        }
+        root.addView(bleHudText)
+
+        val bleButtonsRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 12)
+        }
+        val potholeBleBtn = Button(this).apply {
+            text = "Trigger Pothole (BLE)"
+            textSize = 12f
+            setBackgroundColor(Color.parseColor("#0F766E"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(0, 0, 4, 0)
+            }
+            setOnClickListener {
+                bleTestManager?.generateTestHazard("POTHOLE", 0.85, lastObservedLat, lastObservedLon)
+                updateBleHud()
+            }
+        }
+        val outageBleBtn = Button(this).apply {
+            text = "Trigger Outage (BLE)"
+            textSize = 12f
+            setBackgroundColor(Color.parseColor("#991B1B"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                setMargins(4, 0, 0, 0)
+            }
+            setOnClickListener {
+                bleTestManager?.generateTestHazard("GNSS_OUTAGE", 1.0, lastObservedLat, lastObservedLon)
+                updateBleHud()
+            }
+        }
+        bleButtonsRow.addView(potholeBleBtn)
+        bleButtonsRow.addView(outageBleBtn)
+        root.addView(bleButtonsRow)
+
+        // Initialize BLE test manager
+        bleTestManager = TrafficBleManager(this)
+        bleTestManager?.start(object : TrafficBleManager.TrafficReportListener {
+            override fun onHazardReceived(report: TrafficHazardReport) {
+                runOnUiThread {
+                    updateBleHud()
+                    statusText.text = "BLE Hazard: ${report.hazardType} at %.4f, %.4f".format(report.latitude, report.longitude)
+                }
+            }
+        })
 
         // Trip History Header & List Container
         val tripsHeader = TextView(this).apply {
@@ -277,10 +412,11 @@ class MainActivity : Activity() {
 
         val serviceIntent = Intent(this, TrackingService::class.java).apply {
             putExtra(TrackingService.EXTRA_PROFILE, selectedProfile)
+            putExtra(TrackingService.EXTRA_ROUTE_CATEGORY, selectedRouteCategory)
         }
         startForegroundService(serviceIntent)
         isRecording = true
-        statusText.text = "Starting tracking service ($selectedProfile profile)..."
+        statusText.text = "Starting tracking service ($selectedProfile profile, $selectedRouteCategory)..."
     }
 
     private fun stopRecording() {
@@ -361,4 +497,16 @@ class MainActivity : Activity() {
             statusText.text = "Required permissions not granted"
         }
     }
+
+    private fun updateBleHud() {
+        val s = bleTestManager?.getRelayStats() ?: return
+        bleHudText.text = "Relay HUD: Sent: ${s.sentCount} | Recv: ${s.receivedCount} | Duplicates: ${s.duplicateCount} | Expired: ${s.expiredCount}"
+    }
+
+    override fun onDestroy() {
+        bleTestManager?.stop()
+        bleTestManager = null
+        super.onDestroy()
+    }
 }
+
