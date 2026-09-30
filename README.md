@@ -447,7 +447,7 @@ Pure inertial navigation suffers from gyroscope bias drift ($\sim 1^\circ - 3^\c
 ### 3.6 Specialized Vehicle Dynamics & Profiles
 
 1. **`CAR`:** Standard four-wheel passenger vehicles.
-2. **`MOTORCYCLE`:** High-lean dynamics. Centripetal lean angle $\theta_{\mathrm{lean}} = \operatorname{atan2}(v \cdot \omega_z, g)$ is computed in real time to decouple gravitational contamination from forward acceleration during sharp cornering.
+2. **`MOTORCYCLE`:** High-lean dynamics. Centripetal lean angle $\theta_{\mathrm{lean}} = \mathrm{atan2}(v \cdot \omega_z, g)$ is computed in real time to decouple gravitational contamination from forward acceleration during sharp cornering.
 3. **`PARKING`:** Crawl and reverse detection. Detects reverse gear from negative longitudinal acceleration bursts ($< -1.8\,\text{m/s}^2$) starting from rest.
 4. **`EXTERNAL_IMU`:** Fast 100–200 Hz processing for external telematics boxes connected via BLE or USB.
 

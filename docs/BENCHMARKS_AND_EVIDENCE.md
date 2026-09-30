@@ -51,7 +51,7 @@ graph TD
 
 ### Domain Mitigations Implemented in Continuum IDR:
 1. **Vertical Shock Filtering (`checkSurfaceShock`):** Accelerometer spikes $> 4.5\,\text{m/s}^2$ are classified as `SPEED_BREAKER` or `POTHOLE` anomalies and excluded from the forward speed feature energy calculations.
-2. **Lean-Angle Decoupling:** Motorcycle roll angles are computed via centripetal balance ($\theta = \operatorname{atan2}(v \cdot \omega, g)$) to prevent centrifugal forces from corrupting forward acceleration.
+2. **Lean-Angle Decoupling:** Motorcycle roll angles are computed via centripetal balance ($\theta = \mathrm{atan2}(v \cdot \omega, g)$) to prevent centrifugal forces from corrupting forward acceleration.
 3. **Multi-Feature Stop Gating:** The stop classifier uses window variance and spectral energy across all 6 axes simultaneously to recognize stationary engine idle vibration without false-positive motion creep.
 
 ---

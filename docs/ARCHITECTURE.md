@@ -241,7 +241,7 @@ flowchart LR
 
 2. **Motorcycle Lean Angle Compensation:**
    In two-wheeled vehicles, high-speed cornering produces a lateral roll angle $\theta_{\mathrm{lean}}$ balancing gravity and centripetal acceleration:
-   $$\tan(\theta_{\mathrm{lean}}) = \frac{\hat{v}_k \cdot \omega_{z, k}}{g} \implies \theta_{\mathrm{lean}} = \operatorname{atan2}\left(\hat{v}_k \cdot \omega_{z, k}, 9.80665\right)$$
+   $$\tan(\theta_{\mathrm{lean}}) = \frac{\hat{v}_k \cdot \omega_{z, k}}{g} \implies \theta_{\mathrm{lean}} = \mathrm{atan2}\left(\hat{v}_k \cdot \omega_{z, k}, 9.80665\right)$$
    This lean angle rotates the vertical gravity vector into the lateral accelerometer axis. Continuum IDR subtracts the induced centripetal component to prevent false lateral acceleration spikes.
 
 3. **Geodetic Coordinate Step:**
@@ -400,7 +400,7 @@ $$\alpha(t) = \min\left( \max\left( \frac{t - t_{\mathrm{recovery}}}{T_{\mathrm{
 
 $$\mathbf{p}_{\mathrm{blend}}(t) = (1 - \alpha(t)) \cdot \mathbf{p}_{\mathrm{idr}}(t) + \alpha(t) \cdot \mathbf{p}_{\mathrm{gnss}}(t)$$
 
-$$\theta_{\mathrm{blend}}(t) = \operatorname{atan2}\left( (1 - \alpha) \sin(\theta_{\mathrm{idr}}) + \alpha \sin(\theta_{\mathrm{gnss}}), (1 - \alpha) \cos(\theta_{\mathrm{idr}}) + \alpha \cos(\theta_{\mathrm{gnss}}) \right)$$
+$$\theta_{\mathrm{blend}}(t) = \mathrm{atan2}\left( (1 - \alpha) \sin(\theta_{\mathrm{idr}}) + \alpha \sin(\theta_{\mathrm{gnss}}), (1 - \alpha) \cos(\theta_{\mathrm{idr}}) + \alpha \cos(\theta_{\mathrm{gnss}}) \right)$$
 
 Once $\alpha(t) = 1.0$, the engine transitions cleanly into `GNSS_HEALTHY`, completing the handoff with zero positional discontinuity.
 
