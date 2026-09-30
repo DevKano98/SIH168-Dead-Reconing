@@ -90,6 +90,13 @@ export function useSimulation(pollIntervalMs = 250) {
   }, [snapshot, setGnss]);
 
   const restart = useCallback(() => executeControl('restart'), [executeControl]);
+  const randomize = useCallback(() => executeControl('randomize'), [executeControl]);
+  const toggleNoise = useCallback((val) => {
+    executeControl('noise', val);
+  }, [executeControl]);
+  const setScenario = useCallback((scenarioId) => {
+    executeControl('scenario', scenarioId);
+  }, [executeControl]);
   const setRate = useCallback((rate) => executeControl('rate', rate), [executeControl]);
 
   const retryConnection = useCallback(() => {
@@ -110,7 +117,11 @@ export function useSimulation(pollIntervalMs = 250) {
     setGnss,
     toggleGnss,
     restart,
+    randomize,
+    toggleNoise,
+    setScenario,
     setRate,
     retryConnection,
   };
 }
+

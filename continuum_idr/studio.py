@@ -151,6 +151,43 @@ def create_app(artifacts: Path, dataset: Path = Path("."),
     def get_session():
         return session.snapshot()
 
+    def load_scenario(scenario_id: str):
+        nonlocal runtime
+        with runtime_lock:
+            import random
+            from .model import MotionModelBundle
+            from .data import discover_synchronized_pairs, load_paired_run
+            from .runtime import RuntimeSession
+
+            bundle = MotionModelBundle.load(model)
+            test_runs = bundle.manifest.get("test_runs", ["Vtb01", "Vtb02", "Vtb03", "Vtb04", "Vtb05", "Vtb06"])
+            if scenario_id == "random":
+                chosen = random.choice(test_runs)
+            elif scenario_id in test_runs:
+                chosen = scenario_id
+            else:
+                chosen = "Vtb02"
+
+            pairs = [p for p in discover_synchronized_pairs(dataset) if p.run_id == chosen and p.equal_length]
+            if not pairs:
+                raise HTTPException(400, f"Cannot find synchronized recording for run {chosen}")
+            run_data = load_paired_run(pairs[0])
+            total_samples = len(run_data.time_s)
+
+            if chosen == "Vtb02" and demo_path.exists():
+                demo_data = json.loads(demo_path.read_text(encoding="utf-8"))
+                start = max(0, int(demo_data["outage"]["start_index"]) - 200)
+                end = min(total_samples - 1, int(demo_data["outage"]["end_index"]) + 100)
+            else:
+                mid = total_samples // 2
+                slice_len = min(600, max(200, total_samples // 3))
+                start = max(50, mid - slice_len // 2)
+                end = min(total_samples - 1, start + slice_len)
+
+            runtime = RuntimeSession(run_data, bundle, start, end)
+            runtime.noise_enabled = True
+            return runtime
+
     # /api/session remains the legacy saved-trace player for the existing UI.
     # The new frontend must use /api/runtime exclusively for interactive output.
     @app.get("/api/runtime")
@@ -160,8 +197,14 @@ def create_app(artifacts: Path, dataset: Path = Path("."),
     @app.post("/api/runtime/control")
     def runtime_control(payload: dict[str, Any] = Body(...)):
         try:
+            action = payload.get("action")
+            value = payload.get("value")
+            if action == "scenario":
+                rt = load_scenario(str(value))
+                return JSONResponse(rt.snapshot(), headers={"Cache-Control": "no-store"})
+
             return JSONResponse(
-                get_runtime().control(payload.get("action"), payload.get("value")),
+                get_runtime().control(action, value),
                 headers={"Cache-Control": "no-store"},
             )
         except (ValueError, TypeError) as exc:

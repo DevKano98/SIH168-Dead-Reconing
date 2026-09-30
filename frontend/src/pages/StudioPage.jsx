@@ -20,6 +20,9 @@ export function StudioPage({
   step,
   toggleGnss,
   restart,
+  randomize,
+  toggleNoise,
+  setScenario,
   setRate,
   retryConnection,
 }) {
@@ -69,13 +72,16 @@ export function StudioPage({
           {/* Real-Time Error & Uncertainty Chart */}
           <ErrorChart snapshot={snapshot} />
 
-          {/* Session Controls: Stop Engine, Step +25, Restart, Speed, Export */}
+          {/* Session Controls: Stop Engine, Step +25, Restart, Randomize, Noise, Speed, Export */}
           <SessionControls
             snapshot={snapshot}
             isControlInFlight={isControlInFlight}
             pause={pause}
             step={step}
             restart={restart}
+            randomize={randomize}
+            toggleNoise={toggleNoise}
+            setScenario={setScenario}
             setRate={setRate}
           />
 

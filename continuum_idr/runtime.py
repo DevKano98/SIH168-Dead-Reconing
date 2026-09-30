@@ -32,6 +32,10 @@ class RuntimeSession:
             raise ValueError("Invalid recording interval")
         self.run, self.model = run, model
         self.start, self.end = start_index, end_index
+        self.base_start, self.base_end = start_index, end_index
+        self.noise_enabled = False
+        self.noise_scale = 1.0
+        self.rng = None
         self.clock = clock
         self.lock = threading.Lock()
         self.config = EngineConfig(imu_rate_hz=model.sample_rate_hz, gnss_timeout_s=12.0)
@@ -50,7 +54,20 @@ class RuntimeSession:
         self.reference = np.asarray([self.frame.to_enu(a, b) for a, b in zip(lat, lon)])
         self._reset()
 
-    def _reset(self):
+    def _reset(self, randomize: bool = False):
+        if randomize:
+            self.noise_enabled = True
+            self.rng = np.random.default_rng()
+            delta = int(self.rng.integers(-40, 41))
+            new_start = max(self.warm_start + 10, min(len(self.run.time_s) - 60, self.base_start + delta))
+            new_end = max(new_start + 50, min(len(self.run.time_s) - 1, self.base_end + delta))
+            self.start, self.end = new_start, new_end
+        else:
+            if not self.noise_enabled:
+                self.start, self.end = self.base_start, self.base_end
+            if self.noise_enabled and self.rng is None:
+                self.rng = np.random.default_rng()
+
         self.engine = IDREngine(self.model, self.config)
         self.session_id = str(uuid4())
         self.revision = 0
@@ -78,9 +95,15 @@ class RuntimeSession:
         if delivered:
             speed, course, accuracy = (run.phone_speed_raw[index], run.phone_course_deg[index],
                                        run.phone_accuracy_m[index])
+            lat_deg = float(run.phone_lat[index])
+            lon_deg = float(run.phone_lon[index])
+            if self.noise_enabled and self.noise_scale > 0 and self.rng is not None:
+                jitter = self.rng.normal(0, 1.5 * self.noise_scale, 2)
+                lat_deg += jitter[1] / 111139.0
+                lon_deg += jitter[0] / (111139.0 * max(0.1, math.cos(math.radians(max(-80.0, min(80.0, lat_deg))))))
             self.engine.on_gnss(GNSSFix(
-                timestamp_s=timestamp, latitude_deg=float(run.phone_lat[index]),
-                longitude_deg=float(run.phone_lon[index]),
+                timestamp_s=timestamp, latitude_deg=lat_deg,
+                longitude_deg=lon_deg,
                 speed_mps=max(0.0, float(speed)) if np.isfinite(speed) else None,
                 course_deg=float(course) if np.isfinite(course) else None,
                 horizontal_accuracy_m=float(np.clip(accuracy, 3, 50)) if np.isfinite(accuracy) else 15.0,
@@ -88,9 +111,18 @@ class RuntimeSession:
             self.gnss_delivered += 1
         elif new_fix:
             self.gnss_withheld += 1
+
+        accel = np.array(run.accel[index], dtype=float)
+        gyro = np.array(run.gyro[index], dtype=float)
+        if self.noise_enabled and self.noise_scale > 0 and self.rng is not None:
+            accel += self.rng.normal(0, 0.025 * self.noise_scale, 3)
+            gyro += self.rng.normal(0, 0.0035 * self.noise_scale, 3)
+            if self.rng.random() < 0.04:
+                accel[2] += float(self.rng.uniform(-0.15, 0.15) * self.noise_scale)
+
         state = self.engine.on_imu(IMUSample(
-            timestamp_s=timestamp, accel_mps2=tuple(map(float, run.accel[index])),
-            gyro_radps=tuple(map(float, run.gyro[index])),
+            timestamp_s=timestamp, accel_mps2=tuple(map(float, accel)),
+            gyro_radps=tuple(map(float, gyro)),
             gravity_mps2=tuple(map(float, run.gravity[index])), sensor_id="iovnbd-phone"))
         self.imu_processed += 1
         self.cursor = index
@@ -124,7 +156,9 @@ class RuntimeSession:
             "session_id": self.session_id, "revision": self.revision,
             "execution": "interactive_sdk", "input_source": "recorded_iovnbd_sensors",
             "run_id": self.run.pair.run_id, "model_id": self.model.model_id,
+            "available_runs": ["Vtb01", "Vtb02", "Vtb03", "Vtb04", "Vtb05", "Vtb06", "Vtb07", "Vtb08", "Vtb09", "Vtb11", "Vtb12"],
             "playing": self.playing, "rate": self.rate, "gnss_enabled": self.gnss_enabled,
+            "noise_enabled": self.noise_enabled, "noise_scale": self.noise_scale,
             "completed": self.cursor == self.end, "index": len(self.history) - 1,
             "sample_count": self.end - self.start + 1,
             "duration_s": float(self.run.time_s[self.end] - self.run.time_s[self.start]),
@@ -145,20 +179,30 @@ class RuntimeSession:
 
     def control(self, action, value=None):
         # Validate before advancing or mutating anything.
-        if action not in {"play", "pause", "restart", "rate", "gnss", "step"}:
-            raise ValueError("Supported actions: play, pause, restart, rate, gnss, step; seeking is not supported")
+        if action not in {"play", "pause", "restart", "rate", "gnss", "step", "noise", "randomize"}:
+            raise ValueError("Supported actions: play, pause, restart, rate, gnss, step, noise, randomize; seeking is not supported")
         if action == "rate" and (type(value) not in (int, float) or value not in (0.5, 1, 2, 4)):
             raise ValueError("rate must be 0.5, 1, 2, or 4")
         if action == "gnss" and type(value) is not bool:
             raise ValueError("gnss value must be a boolean")
         if action == "step" and (type(value) is not int or not 1 <= value <= 100):
             raise ValueError("step must be an integer from 1 to 100")
+        if action == "noise" and not isinstance(value, (bool, int, float)):
+            raise ValueError("noise value must be a boolean or numeric scale")
         with self.lock:
             if action == "step" and self.playing:
                 raise ValueError("Pause before stepping")
             self._advance()
             if action == "restart":
-                self._reset()
+                self._reset(randomize=False)
+            elif action == "randomize":
+                self._reset(randomize=True)
+            elif action == "noise":
+                self.noise_enabled = bool(value) if isinstance(value, bool) else (value > 0)
+                if isinstance(value, (int, float)) and value > 0:
+                    self.noise_scale = float(value)
+                if self.noise_enabled and self.rng is None:
+                    self.rng = np.random.default_rng()
             else:
                 if action == "play":
                     if self.cursor == self.end:

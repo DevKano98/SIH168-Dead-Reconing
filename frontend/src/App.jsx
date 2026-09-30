@@ -17,6 +17,9 @@ export function App() {
     step,
     toggleGnss,
     restart,
+    randomize,
+    toggleNoise,
+    setScenario,
     setRate,
     retryConnection,
   } = useSimulation(250);
@@ -67,6 +70,9 @@ export function App() {
           step={step}
           toggleGnss={toggleGnss}
           restart={restart}
+          randomize={randomize}
+          toggleNoise={toggleNoise}
+          setScenario={setScenario}
           setRate={setRate}
           retryConnection={retryConnection}
         />
