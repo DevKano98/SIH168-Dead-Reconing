@@ -138,8 +138,6 @@ mapboxNavigation.navigationOptions.locationEngine = object : LocationEngine {
 A critical problem in fallback systems is **position jumping** when satellite signals return:
 If dead-reckoning accumulated a 15-meter error inside a long tunnel, jumping immediately to the new satellite fix causes navigation apps to announce false turns.
 
-Continuum IDR implements a smooth $2.5\,\text{s}$ linear blending window (`RECOVERING` state):
-
-$$\mathbf{p}(t) = (1 - \alpha) \mathbf{p}_{\text{dead\_reckon}} + \alpha \mathbf{p}_{\text{gnss}}, \quad \alpha \in [0, 1]$$
+$$\mathbf{p}_{\mathrm{blend}}(t) = (1 - \alpha) \mathbf{p}_{\mathrm{idr}}(t) + \alpha \mathbf{p}_{\mathrm{gnss}}(t), \quad \alpha \in [0, 1]$$
 
 This ensures Google Maps' navigation puck glides smoothly onto the verified GPS track without visual jerks or false rerouting recalculations.

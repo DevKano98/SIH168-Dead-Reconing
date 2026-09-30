@@ -46,7 +46,7 @@ Features are extracted from a causal 2.0-second sliding window at 10 Hz (20 samp
 2. **Standard Deviation:** Captures suspension vibration variance, road surface irregularities, and engine RPM harmonics.
 3. **Min / Max:** Extreme peak accelerations (e.g., bumps, braking events, aggressive cornering).
 4. **Last:** Instantaneous value at window boundary.
-5. **Delta ($x_{\text{last}} - x_{\text{first}}$):** Rate of change over the 2-second interval (acceleration onset or braking ramp).
+5. **Delta ($x_{\mathrm{last}} - x_{\mathrm{first}}$):** Rate of change over the 2-second interval (acceleration onset or braking ramp).
 6. **Root-Energy ($\sqrt{\frac{1}{N} \sum x^2}$):** Total spectral dynamic intensity, distinguishing stationary engine idling from high-speed cruising.
 
 ---
@@ -123,4 +123,4 @@ On Android, [`PortableTreeRunner.kt`](file:///d:/iovnbd/IO-VNBD/android/app/src/
 We enforce continuous float-level parity tests between Python scikit-learn and the Kotlin portable tree runner:
 - Python test: `tests/test_portable_model.py`
 - Kotlin JVM test: `android/app/src/test/java/ai/continuum/idr/ParityTest.kt`
-- **Tolerance:** $\max |\hat{v}_{\text{Python}} - \hat{v}_{\text{Kotlin}}| < 10^{-5}\,\text{m/s}$.
+- **Tolerance:** $\max |\hat{v}_{\mathrm{Python}} - \hat{v}_{\mathrm{Kotlin}}| < 10^{-5}\,\text{m/s}$.

@@ -101,7 +101,7 @@ In [`TrackingService.kt`](file:///d:/iovnbd/IO-VNBD/android/app/src/main/java/ai
 
 Continuum IDR includes four vehicle profiles:
 1. **`CAR`:** Standard four-wheeled vehicular kinematics.
-2. **`MOTORCYCLE`:** High-lean dynamics. The engine computes lean angle $\theta_{\text{lean}} = \operatorname{atan2}(v \cdot \omega_z, g)$ to compensate for lateral accelerometer centripetal contamination during sharp turns.
+2. **`MOTORCYCLE`:** High-lean dynamics. The engine computes lean angle $\theta_{\mathrm{lean}} = \operatorname{atan2}(v \cdot \omega_z, g)$ to compensate for lateral accelerometer centripetal contamination during sharp turns.
 3. **`PARKING`:** Crawl and reverse detection. Detects reverse gear from negative longitudinal acceleration bursts ($< -1.8\,\text{m/s}^2$) starting from rest, enabling accurate parking garage tracking.
 4. **`EXTERNAL_IMU`:** Configured for high-rate external BLE/USB inertial sensors sampling up to 200 Hz.
 
