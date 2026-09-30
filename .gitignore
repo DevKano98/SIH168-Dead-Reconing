@@ -145,3 +145,12 @@ $RECYCLE.BIN/
 *.tmp
 .system_generated/
 codex-session-*.md
+
+# ------------------------------------------------------------------------------
+# 11. Node.js & Frontend Build Artifacts
+# ------------------------------------------------------------------------------
+node_modules/
+.npm/
+frontend/node_modules/
+frontend/dist/
+

@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Monospace figures always aligned */
+  .font-mono,
+  .tabular-nums {
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Scientific subtle scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #F1F5F9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+  }
+}
+
+@layer utilities {
+  .subtle-ring {
+    box-shadow: 0 0 0 1px rgba(226, 232, 240, 0.8), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  }
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #2563EB;
+  }
+}
