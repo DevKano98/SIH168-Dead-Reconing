@@ -1,5 +1,9 @@
 # Continuum IDR — Autonomous Inertial Dead-Reckoning Navigation System
 
+> 🌐 **Live Documentation & Interactive Platform:**  
+> **[Continuum IDR — Edge Dead-Reckoning Navigation SDK & Platform](https://reliable-croissant-5c7ac7.netlify.app/)**
+
+[![Live Platform](https://img.shields.io/badge/Live%20Platform-Netlify-00C7B7.svg?logo=netlify&logoColor=white)](https://reliable-croissant-5c7ac7.netlify.app/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Android SDK 26-35](https://img.shields.io/badge/Android-API%2026--35-3DDC84.svg?logo=android&logoColor=white)](https://developer.android.com/)
 [![iOS 16.0+](https://img.shields.io/badge/iOS-16.0%2B%20%7C%20Swift%205.9-000000.svg?logo=apple&logoColor=white)](ios/)
