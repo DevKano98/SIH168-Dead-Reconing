@@ -1,0 +1,496 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B1000101 /* ContinuumIDRApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000101 /* ContinuumIDRApp.swift */; };
+		B1000102 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000102 /* ContentView.swift */; };
+		B1000103 /* BentoMetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000103 /* BentoMetricCard.swift */; };
+		B1000104 /* OfflineMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000104 /* OfflineMapView.swift */; };
+		B1000105 /* TripHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000105 /* TripHistoryView.swift */; };
+		B1000106 /* ContinuumLocationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000106 /* ContinuumLocationEngine.swift */; };
+		B1000107 /* PortableTreeRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000107 /* PortableTreeRunner.swift */; };
+		B1000108 /* RoadGraphPack.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000108 /* RoadGraphPack.swift */; };
+		B1000109 /* TrafficBleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000109 /* TrafficBleManager.swift */; };
+		B1000110 /* TripRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000110 /* TripRecorder.swift */; };
+		B1000111 /* VehicleProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000111 /* VehicleProfile.swift */; };
+		B1000112 /* FallbackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000112 /* FallbackState.swift */; };
+		B1000113 /* EngineDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000113 /* EngineDiagnostics.swift */; };
+		B1000114 /* TrafficHazardReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000114 /* TrafficHazardReport.swift */; };
+		B1000115 /* MapMatchResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000115 /* MapMatchResult.swift */; };
+		B1000116 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1000116 /* Assets.xcassets */; };
+		B1000117 /* motion_portable.json in Resources */ = {isa = PBXBuildFile; fileRef = F1000117 /* motion_portable.json */; };
+		B1000118 /* sample_road_pack.json in Resources */ = {isa = PBXBuildFile; fileRef = F1000118 /* sample_road_pack.json */; };
+		B1000119 /* parity_fixture.json in Resources */ = {isa = PBXBuildFile; fileRef = F1000119 /* parity_fixture.json */; };
+		B1000201 /* ParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000201 /* ParityTests.swift */; };
+		B1000202 /* RoadGraphPackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000202 /* RoadGraphPackTests.swift */; };
+		B1000203 /* FeatureExtractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000203 /* FeatureExtractionTests.swift */; };
+		B1000204 /* motion_portable.json in Resources */ = {isa = PBXBuildFile; fileRef = F1000117 /* motion_portable.json */; };
+		B1000205 /* parity_fixture.json in Resources */ = {isa = PBXBuildFile; fileRef = F1000119 /* parity_fixture.json */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		P1000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = T1000001 /* ContinuumIDR */;
+			remoteInfo = ContinuumIDR;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		R1000001 /* ContinuumIDR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ContinuumIDR.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		R1000002 /* ContinuumIDRTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ContinuumIDRTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1000101 /* ContinuumIDRApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuumIDRApp.swift; sourceTree = "<group>"; };
+		F1000102 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		F1000103 /* BentoMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BentoMetricCard.swift; sourceTree = "<group>"; };
+		F1000104 /* OfflineMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineMapView.swift; sourceTree = "<group>"; };
+		F1000105 /* TripHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripHistoryView.swift; sourceTree = "<group>"; };
+		F1000106 /* ContinuumLocationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuumLocationEngine.swift; sourceTree = "<group>"; };
+		F1000107 /* PortableTreeRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableTreeRunner.swift; sourceTree = "<group>"; };
+		F1000108 /* RoadGraphPack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadGraphPack.swift; sourceTree = "<group>"; };
+		F1000109 /* TrafficBleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficBleManager.swift; sourceTree = "<group>"; };
+		F1000110 /* TripRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripRecorder.swift; sourceTree = "<group>"; };
+		F1000111 /* VehicleProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleProfile.swift; sourceTree = "<group>"; };
+		F1000112 /* FallbackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FallbackState.swift; sourceTree = "<group>"; };
+		F1000113 /* EngineDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineDiagnostics.swift; sourceTree = "<group>"; };
+		F1000114 /* TrafficHazardReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficHazardReport.swift; sourceTree = "<group>"; };
+		F1000115 /* MapMatchResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapMatchResult.swift; sourceTree = "<group>"; };
+		F1000116 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F1000117 /* motion_portable.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = motion_portable.json; sourceTree = "<group>"; };
+		F1000118 /* sample_road_pack.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sample_road_pack.json; sourceTree = "<group>"; };
+		F1000119 /* parity_fixture.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = parity_fixture.json; sourceTree = "<group>"; };
+		F1000120 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F1000201 /* ParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParityTests.swift; sourceTree = "<group>"; };
+		F1000202 /* RoadGraphPackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadGraphPackTests.swift; sourceTree = "<group>"; };
+		F1000203 /* FeatureExtractionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureExtractionTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		W1000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		W1000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		G1000000 /* Main Group */ = {
+			isa = PBXGroup;
+			children = (
+				G1000100 /* ContinuumIDR */,
+				G1000200 /* ContinuumIDRTests */,
+				G1000300 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		G1000100 /* ContinuumIDR */ = {
+			isa = PBXGroup;
+			children = (
+				G1000110 /* App */,
+				G1000120 /* Core */,
+				G1000130 /* Models */,
+				G1000140 /* Views */,
+				G1000150 /* Resources */,
+			);
+			path = ContinuumIDR;
+			sourceTree = "<group>";
+		};
+		G1000110 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F1000101 /* ContinuumIDRApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		G1000120 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				F1000106 /* ContinuumLocationEngine.swift */,
+				F1000107 /* PortableTreeRunner.swift */,
+				F1000108 /* RoadGraphPack.swift */,
+				F1000109 /* TrafficBleManager.swift */,
+				F1000110 /* TripRecorder.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		G1000130 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F1000111 /* VehicleProfile.swift */,
+				F1000112 /* FallbackState.swift */,
+				F1000113 /* EngineDiagnostics.swift */,
+				F1000114 /* TrafficHazardReport.swift */,
+				F1000115 /* MapMatchResult.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		G1000140 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F1000102 /* ContentView.swift */,
+				F1000103 /* BentoMetricCard.swift */,
+				F1000104 /* OfflineMapView.swift */,
+				F1000105 /* TripHistoryView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		G1000150 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F1000120 /* Info.plist */,
+				F1000116 /* Assets.xcassets */,
+				F1000117 /* motion_portable.json */,
+				F1000118 /* sample_road_pack.json */,
+				F1000119 /* parity_fixture.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		G1000200 /* ContinuumIDRTests */ = {
+			isa = PBXGroup;
+			children = (
+				F1000201 /* ParityTests.swift */,
+				F1000202 /* RoadGraphPackTests.swift */,
+				F1000203 /* FeatureExtractionTests.swift */,
+			);
+			path = ContinuumIDRTests;
+			sourceTree = "<group>";
+		};
+		G1000300 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				R1000001 /* ContinuumIDR.app */,
+				R1000002 /* ContinuumIDRTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		T1000001 /* ContinuumIDR */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C1000002 /* Build configuration list for PBXNativeTarget "ContinuumIDR" */;
+			buildPhases = (
+				S1000001 /* Sources */,
+				W1000001 /* Frameworks */,
+				M1000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ContinuumIDR;
+			productName = ContinuumIDR;
+			productReference = R1000001 /* ContinuumIDR.app */;
+			productType = "com.apple.product-type.application";
+		};
+		T1000002 /* ContinuumIDRTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C1000003 /* Build configuration list for PBXNativeTarget "ContinuumIDRTests" */;
+			buildPhases = (
+				S1000002 /* Sources */,
+				W1000002 /* Frameworks */,
+				M1000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D1000001 /* PBXTargetDependency */,
+			);
+			name = ContinuumIDRTests;
+			productName = ContinuumIDRTests;
+			productReference = R1000002 /* ContinuumIDRTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					T1000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					T1000002 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = T1000001;
+					};
+				};
+			};
+			buildConfigurationList = C1000001 /* Build configuration list for PBXProject "ContinuumIDR" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = G1000000 /* Main Group */;
+			productRefGroup = G1000300 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				T1000001 /* ContinuumIDR */,
+				T1000002 /* ContinuumIDRTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		M1000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000116 /* Assets.xcassets in Resources */,
+				B1000117 /* motion_portable.json in Resources */,
+				B1000118 /* sample_road_pack.json in Resources */,
+				B1000119 /* parity_fixture.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		M1000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000204 /* motion_portable.json in Resources */,
+				B1000205 /* parity_fixture.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		S1000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000101 /* ContinuumIDRApp.swift in Sources */,
+				B1000102 /* ContentView.swift in Sources */,
+				B1000103 /* BentoMetricCard.swift in Sources */,
+				B1000104 /* OfflineMapView.swift in Sources */,
+				B1000105 /* TripHistoryView.swift in Sources */,
+				B1000106 /* ContinuumLocationEngine.swift in Sources */,
+				B1000107 /* PortableTreeRunner.swift in Sources */,
+				B1000108 /* RoadGraphPack.swift in Sources */,
+				B1000109 /* TrafficBleManager.swift in Sources */,
+				B1000110 /* TripRecorder.swift in Sources */,
+				B1000111 /* VehicleProfile.swift in Sources */,
+				B1000112 /* FallbackState.swift in Sources */,
+				B1000113 /* EngineDiagnostics.swift in Sources */,
+				B1000114 /* TrafficHazardReport.swift in Sources */,
+				B1000115 /* MapMatchResult.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		S1000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000201 /* ParityTests.swift in Sources */,
+				B1000202 /* RoadGraphPackTests.swift in Sources */,
+				B1000203 /* FeatureExtractionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D1000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = T1000001 /* ContinuumIDR */;
+			targetProxy = P1000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		U1000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		U1000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		U1000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ContinuumIDR/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.continuum.idr;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		U1000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ContinuumIDR/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.continuum.idr;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		U1000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.continuum.idr.ContinuumIDRTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ContinuumIDR.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ContinuumIDR";
+			};
+			name = Debug;
+		};
+		U1000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.continuum.idr.ContinuumIDRTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ContinuumIDR.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ContinuumIDR";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C1000001 /* Build configuration list for PBXProject "ContinuumIDR" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				U1000001 /* Debug */,
+				U1000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C1000002 /* Build configuration list for PBXNativeTarget "ContinuumIDR" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				U1000003 /* Debug */,
+				U1000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C1000003 /* Build configuration list for PBXNativeTarget "ContinuumIDRTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				U1000005 /* Debug */,
+				U1000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = A1000001 /* Project object */;
+}

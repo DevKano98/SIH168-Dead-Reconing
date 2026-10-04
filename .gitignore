@@ -102,11 +102,16 @@ android/*/build/
 .gradle/
 local.properties
 *.apk
+!continuum-idr-platform/assets/apk/*.apk
 *.aab
 *.dex
 captures/
 .externalNativeBuild
 .cxx/
+
+# Raw large video project directories (exceeds GitHub 100MB limit)
+/video assets/
+/videos/
 
 # ------------------------------------------------------------------------------
 # 8. IDEs & Editors

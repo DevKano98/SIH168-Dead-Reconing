@@ -2,6 +2,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Android SDK 26-35](https://img.shields.io/badge/Android-API%2026--35-3DDC84.svg?logo=android&logoColor=white)](https://developer.android.com/)
+[![iOS 16.0+](https://img.shields.io/badge/iOS-16.0%2B%20%7C%20Swift%205.9-000000.svg?logo=apple&logoColor=white)](ios/)
 [![React 18 Studio](https://img.shields.io/badge/Studio-React%2018%20%2B%20Vite-61DAFB.svg?logo=react&logoColor=black)](continuum_idr/studio/)
 [![Tests Passing](https://img.shields.io/badge/tests-122%2F122%20passing-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -624,6 +625,16 @@ IO-VNBD/
 │   │   │   └── RoadGraphPack.kt         # Spatial road topology matcher
 │   │   └── res/drawable/                # Automotive Bento UI shape drawables
 │   └── app/src/test/                    # JVM unit tests (Parity, Road Graph, Instrumentation)
+├── ios/                                 # Native iOS SwiftUI & CoreMotion Application
+│   ├── ContinuumIDR.xcodeproj/          # Full Xcode project for iOS 16+
+│   ├── Package.swift                    # Swift Package Manager (SPM) manifest
+│   ├── ContinuumIDR/
+│   │   ├── App/ContinuumIDRApp.swift    # SwiftUI application entry point
+│   │   ├── Core/                        # LocationEngine, PortableTreeRunner, RoadGraphPack, BLE, Recorder
+│   │   ├── Models/                      # VehicleProfile, FallbackState, Diagnostics, Hazards
+│   │   ├── Views/                       # BentoCockpit, OfflineMapView (Canvas), TripHistory
+│   │   └── Resources/                   # Info.plist, Assets, motion_portable.json, road pack
+│   └── ContinuumIDRTests/               # Unit tests & numerical parity verification (<1e-4)
 ├── continuum_idr/                       # Core Python Navigation SDK & Engine
 │   ├── cli.py                           # Unified CLI (studio, train, evaluate, export, etc.)
 │   ├── engine.py                        # IDREngine state machine & kinematics

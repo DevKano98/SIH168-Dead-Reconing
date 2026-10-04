@@ -1,0 +1,1159 @@
+{
+  "format_version": "1.0.0",
+  "name": "Electronic City Corridor",
+  "cell_size_m": 100.0,
+  "origin_lat": 12.845,
+  "origin_lon": 77.66,
+  "nodes": [
+    {
+      "id": "expressway_0",
+      "lat": 12.845,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 0.0
+    },
+    {
+      "id": "expressway_1",
+      "lat": 12.8467966,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 200.0
+    },
+    {
+      "id": "expressway_2",
+      "lat": 12.8485933,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 400.0
+    },
+    {
+      "id": "expressway_3",
+      "lat": 12.8503899,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 600.0
+    },
+    {
+      "id": "expressway_4",
+      "lat": 12.8521865,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 800.0
+    },
+    {
+      "id": "expressway_5",
+      "lat": 12.8539832,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 1000.0
+    },
+    {
+      "id": "expressway_6",
+      "lat": 12.8557798,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 1200.0
+    },
+    {
+      "id": "expressway_7",
+      "lat": 12.8575764,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 1400.0
+    },
+    {
+      "id": "expressway_8",
+      "lat": 12.859373,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 1600.0
+    },
+    {
+      "id": "expressway_9",
+      "lat": 12.8611697,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 1800.0
+    },
+    {
+      "id": "expressway_10",
+      "lat": 12.8629663,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 2000.0
+    },
+    {
+      "id": "expressway_11",
+      "lat": 12.8647629,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 2200.0
+    },
+    {
+      "id": "expressway_12",
+      "lat": 12.8665596,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 2400.0
+    },
+    {
+      "id": "expressway_13",
+      "lat": 12.8683562,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 2600.0
+    },
+    {
+      "id": "expressway_14",
+      "lat": 12.8701528,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 2800.0
+    },
+    {
+      "id": "expressway_15",
+      "lat": 12.8719495,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 3000.0
+    },
+    {
+      "id": "expressway_16",
+      "lat": 12.8737461,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 3200.0
+    },
+    {
+      "id": "expressway_17",
+      "lat": 12.8755427,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 3400.0
+    },
+    {
+      "id": "expressway_18",
+      "lat": 12.8773394,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 3600.0
+    },
+    {
+      "id": "expressway_19",
+      "lat": 12.879136,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 3800.0
+    },
+    {
+      "id": "expressway_20",
+      "lat": 12.8809326,
+      "lon": 77.66,
+      "east_m": 0.0,
+      "north_m": 4000.0
+    },
+    {
+      "id": "surface_0",
+      "lat": 12.845,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 0.0
+    },
+    {
+      "id": "surface_1",
+      "lat": 12.8467966,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 200.0
+    },
+    {
+      "id": "surface_2",
+      "lat": 12.8485933,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 400.0
+    },
+    {
+      "id": "surface_3",
+      "lat": 12.8503899,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 600.0
+    },
+    {
+      "id": "surface_4",
+      "lat": 12.8521865,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 800.0
+    },
+    {
+      "id": "surface_5",
+      "lat": 12.8539832,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 1000.0
+    },
+    {
+      "id": "surface_6",
+      "lat": 12.8557798,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 1200.0
+    },
+    {
+      "id": "surface_7",
+      "lat": 12.8575764,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 1400.0
+    },
+    {
+      "id": "surface_8",
+      "lat": 12.859373,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 1600.0
+    },
+    {
+      "id": "surface_9",
+      "lat": 12.8611697,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 1800.0
+    },
+    {
+      "id": "surface_10",
+      "lat": 12.8629663,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 2000.0
+    },
+    {
+      "id": "surface_11",
+      "lat": 12.8647629,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 2200.0
+    },
+    {
+      "id": "surface_12",
+      "lat": 12.8665596,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 2400.0
+    },
+    {
+      "id": "surface_13",
+      "lat": 12.8683562,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 2600.0
+    },
+    {
+      "id": "surface_14",
+      "lat": 12.8701528,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 2800.0
+    },
+    {
+      "id": "surface_15",
+      "lat": 12.8719495,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 3000.0
+    },
+    {
+      "id": "surface_16",
+      "lat": 12.8737461,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 3200.0
+    },
+    {
+      "id": "surface_17",
+      "lat": 12.8755427,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 3400.0
+    },
+    {
+      "id": "surface_18",
+      "lat": 12.8773394,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 3600.0
+    },
+    {
+      "id": "surface_19",
+      "lat": 12.879136,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 3800.0
+    },
+    {
+      "id": "surface_20",
+      "lat": 12.8809326,
+      "lon": 77.6601382,
+      "east_m": 15.0,
+      "north_m": 4000.0
+    },
+    {
+      "id": "service_0",
+      "lat": 12.845,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 0.0
+    },
+    {
+      "id": "service_1",
+      "lat": 12.8467966,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 200.0
+    },
+    {
+      "id": "service_2",
+      "lat": 12.8485933,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 400.0
+    },
+    {
+      "id": "service_3",
+      "lat": 12.8503899,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 600.0
+    },
+    {
+      "id": "service_4",
+      "lat": 12.8521865,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 800.0
+    },
+    {
+      "id": "service_5",
+      "lat": 12.8539832,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 1000.0
+    },
+    {
+      "id": "service_6",
+      "lat": 12.8557798,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 1200.0
+    },
+    {
+      "id": "service_7",
+      "lat": 12.8575764,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 1400.0
+    },
+    {
+      "id": "service_8",
+      "lat": 12.859373,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 1600.0
+    },
+    {
+      "id": "service_9",
+      "lat": 12.8611697,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 1800.0
+    },
+    {
+      "id": "service_10",
+      "lat": 12.8629663,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 2000.0
+    },
+    {
+      "id": "service_11",
+      "lat": 12.8647629,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 2200.0
+    },
+    {
+      "id": "service_12",
+      "lat": 12.8665596,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 2400.0
+    },
+    {
+      "id": "service_13",
+      "lat": 12.8683562,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 2600.0
+    },
+    {
+      "id": "service_14",
+      "lat": 12.8701528,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 2800.0
+    },
+    {
+      "id": "service_15",
+      "lat": 12.8719495,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 3000.0
+    },
+    {
+      "id": "service_16",
+      "lat": 12.8737461,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 3200.0
+    },
+    {
+      "id": "service_17",
+      "lat": 12.8755427,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 3400.0
+    },
+    {
+      "id": "service_18",
+      "lat": 12.8773394,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 3600.0
+    },
+    {
+      "id": "service_19",
+      "lat": 12.879136,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 3800.0
+    },
+    {
+      "id": "service_20",
+      "lat": 12.8809326,
+      "lon": 77.6603225,
+      "east_m": 35.0,
+      "north_m": 4000.0
+    },
+    {
+      "id": "cross_w",
+      "lat": 12.8629663,
+      "lon": 77.6572359,
+      "east_m": -300.0,
+      "north_m": 2000.0
+    },
+    {
+      "id": "cross_e",
+      "lat": 12.8629663,
+      "lon": 77.6627641,
+      "east_m": 300.0,
+      "north_m": 2000.0
+    }
+  ],
+  "segments": [
+    {
+      "id": "seg_exp_0_1",
+      "from_node": "expressway_0",
+      "to_node": "expressway_1",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_1_2",
+      "from_node": "expressway_1",
+      "to_node": "expressway_2",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_2_3",
+      "from_node": "expressway_2",
+      "to_node": "expressway_3",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_3_4",
+      "from_node": "expressway_3",
+      "to_node": "expressway_4",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_4_5",
+      "from_node": "expressway_4",
+      "to_node": "expressway_5",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_5_6",
+      "from_node": "expressway_5",
+      "to_node": "expressway_6",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_6_7",
+      "from_node": "expressway_6",
+      "to_node": "expressway_7",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_7_8",
+      "from_node": "expressway_7",
+      "to_node": "expressway_8",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_8_9",
+      "from_node": "expressway_8",
+      "to_node": "expressway_9",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_9_10",
+      "from_node": "expressway_9",
+      "to_node": "expressway_10",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_10_11",
+      "from_node": "expressway_10",
+      "to_node": "expressway_11",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_11_12",
+      "from_node": "expressway_11",
+      "to_node": "expressway_12",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_12_13",
+      "from_node": "expressway_12",
+      "to_node": "expressway_13",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_13_14",
+      "from_node": "expressway_13",
+      "to_node": "expressway_14",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_14_15",
+      "from_node": "expressway_14",
+      "to_node": "expressway_15",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_15_16",
+      "from_node": "expressway_15",
+      "to_node": "expressway_16",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_16_17",
+      "from_node": "expressway_16",
+      "to_node": "expressway_17",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_17_18",
+      "from_node": "expressway_17",
+      "to_node": "expressway_18",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_18_19",
+      "from_node": "expressway_18",
+      "to_node": "expressway_19",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_exp_19_20",
+      "from_node": "expressway_19",
+      "to_node": "expressway_20",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 22.2,
+      "lane_count": 3,
+      "road_type": "motorway",
+      "one_way": true
+    },
+    {
+      "id": "seg_surf_0_1",
+      "from_node": "surface_0",
+      "to_node": "surface_1",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_1_2",
+      "from_node": "surface_1",
+      "to_node": "surface_2",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_2_3",
+      "from_node": "surface_2",
+      "to_node": "surface_3",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_3_4",
+      "from_node": "surface_3",
+      "to_node": "surface_4",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_4_5",
+      "from_node": "surface_4",
+      "to_node": "surface_5",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_5_6",
+      "from_node": "surface_5",
+      "to_node": "surface_6",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_6_7",
+      "from_node": "surface_6",
+      "to_node": "surface_7",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_7_8",
+      "from_node": "surface_7",
+      "to_node": "surface_8",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_8_9",
+      "from_node": "surface_8",
+      "to_node": "surface_9",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_9_10",
+      "from_node": "surface_9",
+      "to_node": "surface_10",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_10_11",
+      "from_node": "surface_10",
+      "to_node": "surface_11",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_11_12",
+      "from_node": "surface_11",
+      "to_node": "surface_12",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_12_13",
+      "from_node": "surface_12",
+      "to_node": "surface_13",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_13_14",
+      "from_node": "surface_13",
+      "to_node": "surface_14",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_14_15",
+      "from_node": "surface_14",
+      "to_node": "surface_15",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_15_16",
+      "from_node": "surface_15",
+      "to_node": "surface_16",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_16_17",
+      "from_node": "surface_16",
+      "to_node": "surface_17",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_17_18",
+      "from_node": "surface_17",
+      "to_node": "surface_18",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_18_19",
+      "from_node": "surface_18",
+      "to_node": "surface_19",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_surf_19_20",
+      "from_node": "surface_19",
+      "to_node": "surface_20",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 13.9,
+      "lane_count": 2,
+      "road_type": "primary",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_0_1",
+      "from_node": "service_0",
+      "to_node": "service_1",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_1_2",
+      "from_node": "service_1",
+      "to_node": "service_2",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_2_3",
+      "from_node": "service_2",
+      "to_node": "service_3",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_3_4",
+      "from_node": "service_3",
+      "to_node": "service_4",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_4_5",
+      "from_node": "service_4",
+      "to_node": "service_5",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_5_6",
+      "from_node": "service_5",
+      "to_node": "service_6",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_6_7",
+      "from_node": "service_6",
+      "to_node": "service_7",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_7_8",
+      "from_node": "service_7",
+      "to_node": "service_8",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_8_9",
+      "from_node": "service_8",
+      "to_node": "service_9",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_9_10",
+      "from_node": "service_9",
+      "to_node": "service_10",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_10_11",
+      "from_node": "service_10",
+      "to_node": "service_11",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_11_12",
+      "from_node": "service_11",
+      "to_node": "service_12",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_12_13",
+      "from_node": "service_12",
+      "to_node": "service_13",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_13_14",
+      "from_node": "service_13",
+      "to_node": "service_14",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_14_15",
+      "from_node": "service_14",
+      "to_node": "service_15",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_15_16",
+      "from_node": "service_15",
+      "to_node": "service_16",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_16_17",
+      "from_node": "service_16",
+      "to_node": "service_17",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_17_18",
+      "from_node": "service_17",
+      "to_node": "service_18",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_18_19",
+      "from_node": "service_18",
+      "to_node": "service_19",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "seg_serv_19_20",
+      "from_node": "service_19",
+      "to_node": "service_20",
+      "heading_deg": 0.0,
+      "length_m": 200.0,
+      "speed_limit_mps": 8.3,
+      "lane_count": 1,
+      "road_type": "service",
+      "one_way": false
+    },
+    {
+      "id": "ramp_exp_to_surf_1000m",
+      "from_node": "expressway_5",
+      "to_node": "surface_6",
+      "heading_deg": 4.29,
+      "length_m": 200.56,
+      "speed_limit_mps": 11.1,
+      "lane_count": 1,
+      "road_type": "primary_link",
+      "one_way": true
+    },
+    {
+      "id": "cross_w_to_surface",
+      "from_node": "cross_w",
+      "to_node": "surface_10",
+      "heading_deg": 90.0,
+      "length_m": 315.0,
+      "speed_limit_mps": 11.1,
+      "lane_count": 2,
+      "road_type": "secondary",
+      "one_way": false
+    },
+    {
+      "id": "surface_to_cross_e",
+      "from_node": "surface_10",
+      "to_node": "cross_e",
+      "heading_deg": 90.0,
+      "length_m": 285.0,
+      "speed_limit_mps": 11.1,
+      "lane_count": 2,
+      "road_type": "secondary",
+      "one_way": false
+    }
+  ]
+}

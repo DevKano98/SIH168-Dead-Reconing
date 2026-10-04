@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Continuum IDR — Edge Dead-Reckoning Navigation SDK & Platform</title>
+  <meta name="description" content="Hardware-free autonomous dead-reckoning navigation fallback for Google Maps in tunnels, flyovers, and basement parking garages using smartphone IMU sensors.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="top-header">
+    <div class="header-container">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Toggle navigation">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
+        <a href="#overview" class="brand-wrapper">
+          <div class="brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-45deg);">
+              <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+            </svg>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="brand-name">Continuum IDR</span>
+              <span class="brand-badge">SIH 2026</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="header-actions">
+        <div class="header-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="docs-search" placeholder="Search documentation, math, code...">
+        </div>
+
+        <nav style="display: flex; align-items: center; gap: 0.5rem;" class="desktop-nav-links">
+          <a href="#architecture" class="header-nav-link">Architecture</a>
+          <a href="#evaluation" class="header-nav-link">Evaluation</a>
+          <a href="#videos" class="header-nav-link">Videos</a>
+          <a href="#api" class="header-nav-link">API</a>
+        </nav>
+
+        <!-- Prominent Download APK Button -->
+        <a href="assets/apk/Continuum_IDR_v1.0.apk" download="Continuum_IDR_v1.0.apk" class="btn-apk-download" id="top-download-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download APK (1.1 MB)</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Portal Layout -->
+  <div class="portal-layout">
+
+    <!-- Sticky Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-category">
+        <div class="sidebar-category-title">Getting Started</div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item active"><a href="#overview">Overview & Vision</a></li>
+          <li class="sidebar-item"><a href="#downloads">Download Android App</a></li>
+          <li class="sidebar-item"><a href="#quickstart">Quickstart & CLI</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-category">
+        <div class="sidebar-category-title">System Architecture</div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item"><a href="#architecture">End-to-End Pipeline</a></li>
+          <li class="sidebar-item"><a href="#sensors-kinematics">Sensors & Kinematics</a></li>
+          <li class="sidebar-item"><a href="#state-machine">Lifecycle State Machine</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-category">
+        <div class="sidebar-category-title">Dual Edge Machine Learning</div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item"><a href="#feature-extraction">42-Moment Extractor</a></li>
+          <li class="sidebar-item"><a href="#speed-regressor">Speed Regressor (HGBR)</a></li>
+          <li class="sidebar-item"><a href="#stop-classifier">Stop Classifier & ZUPT</a></li>
+          <li class="sidebar-item"><a href="#portable-engine">Portable Kotlin Engine</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-category">
+        <div class="sidebar-category-title">OS Integration & Google Maps</div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item"><a href="#mock-relay">OS Mock GPS Relay</a></li>
+          <li class="sidebar-item"><a href="#reconvergence">Smooth Re-Convergence</a></li>
+          <li class="sidebar-item"><a href="#road-snapping">Topological Road Snapping</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-category">
+        <div class="sidebar-category-title">Indian Road Realities</div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item"><a href="#indian-roads">Pothole & Shock Filter</a></li>
+          <li class="sidebar-item"><a href="#two-wheeler">Motorcycle Lean Decoupling</a></li>
+          <li class="sidebar-item"><a href="#v2v-mesh">18-Byte V2V BLE Mesh</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-category">
+        <div class="sidebar-category-title">Evidence & Visual Graphs</div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item"><a href="#dataset">IO-VNBD Dataset Split</a></li>
+          <li class="sidebar-item"><a href="#graph-trajectory">Trajectory Analysis</a></li>
+          <li class="sidebar-item"><a href="#graph-error">Error vs. Outage Time</a></li>
+          <li class="sidebar-item"><a href="#graph-speed">Velocity Tracking Profile</a></li>
+          <li class="sidebar-item"><a href="#graph-yaw">Heading & Gyro Yaw</a></li>
+          <li class="sidebar-item"><a href="#graph-snapping">Map Snapping Vectors</a></li>
+          <li class="sidebar-item"><a href="#graph-shocks">IMU Shocks & Anomalies</a></li>
+          <li class="sidebar-item"><a href="#graph-distributions">Benchmark Distribution</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-category">
+        <div class="sidebar-category-title">Demonstrations & Media</div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item"><a href="#videos">Video Walkthroughs</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-category">
+        <div class="sidebar-category-title">Developer APIs & Contracts</div>
+        <ul class="sidebar-menu">
+          <li class="sidebar-item"><a href="#api">Python IDREngine SDK</a></li>
+          <li class="sidebar-item"><a href="#android-sdk">Kotlin LocationEngine</a></li>
+          <li class="sidebar-item"><a href="#rest-api">Studio HTTP & SSE API</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer-card">
+        <h4>Continuum IDR v1.0</h4>
+        <p>Edge Dead Reckoning SDK for Smart India Hackathon (SIH 2026).</p>
+        <a href="assets/apk/Continuum_IDR_v1.0.apk" download="Continuum_IDR_v1.0.apk" class="btn-secondary" style="width: 100%; justify-content: center; font-size: 0.75rem; padding: 0.4rem;">
+          Download APK
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      <div class="content-container">
+
+        <!-- Hero Section -->
+        <section id="overview" class="hero-section">
+          <div class="hero-pill">
+            <span>Edge Inertial Navigation SDK</span>
+            <span>•</span>
+            <span>100% Offline</span>
+            <span>•</span>
+            <span>Zero OBD-II</span>
+          </div>
+
+          <h1 class="hero-title">
+            Continuum IDR: Hardware-Free Edge Dead-Reckoning Navigation SDK
+          </h1>
+
+          <p class="hero-subtitle">
+            Autonomous dead-reckoning engine running locally on consumer smartphones at 10 Hz. 
+            When satellite signals drop in tunnels, underpasses, and basement parking garages, Continuum IDR takes over instantly—quietly feeding dead-reckoned fallback coordinates directly to <strong>Google Maps</strong> via Android’s OS Mock Location system.
+          </p>
+
+          <!-- Key Metrics Grid -->
+          <div class="hero-metrics-grid">
+            <div class="hero-metric-card">
+              <div class="hero-metric-val">28.7%</div>
+              <div class="hero-metric-label">Drift Error Reduction vs Frozen GPS</div>
+            </div>
+            <div class="hero-metric-card">
+              <div class="hero-metric-val">&lt; 140 µs</div>
+              <div class="hero-metric-label">Edge Inference Step Latency</div>
+            </div>
+            <div class="hero-metric-card">
+              <div class="hero-metric-val">&lt; 4.5 MB</div>
+              <div class="hero-metric-label">Mobile Heap Memory Footprint</div>
+            </div>
+            <div class="hero-metric-card">
+              <div class="hero-metric-val">0 Cables</div>
+              <div class="hero-metric-label">Zero OBD-II or CAN Hardware Required</div>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <a href="assets/apk/Continuum_IDR_v1.0.apk" download="Continuum_IDR_v1.0.apk" class="btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Download Android APK (1.1 MB)</span>
+            </a>
+            <a href="#videos" class="btn-secondary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Watch Live Demonstrations</span>
+            </a>
+            <a href="#architecture" class="btn-secondary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+              <span>System Architecture</span>
+            </a>
+          </div>
+        </section>
+
+        <!-- Download Hero Card -->
+        <section id="downloads" class="download-hero-card">
+          <div class="download-hero-text">
+            <h3>Get the Continuum IDR Android Reference App</h3>
+            <p>
+              Experience seamless dead-reckoning fallback on your own smartphone. Mount the phone on your car dashboard or bike handlebar, tap "Enable Mock GPS", and drive into any tunnel with Google Maps open.
+            </p>
+            <div class="download-spec-list" style="margin-top: 0.75rem;">
+              <span>• Package: <code>ai.continuum.idr</code></span>
+              <span>• Target: Android 8.0+ (API 26–34)</span>
+              <span>• Size: 1.1 MB</span>
+              <span>• Permissions: Fine Location, Mock Location, BLE</span>
+            </div>
+          </div>
+          <div class="download-hero-actions">
+            <a href="assets/apk/Continuum_IDR_v1.0.apk" download="Continuum_IDR_v1.0.apk" class="btn-primary" style="padding: 0.8rem 1.6rem; font-size: 1rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Download APK (v1.0.0)</span>
+            </a>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Verified build • Zero ads • Zero cloud telemetry</span>
+          </div>
+        </section>
+
+        <!-- Section: System Architecture & Boundaries -->
+        <section id="architecture" class="doc-section">
+          <div class="section-tag">System Architecture</div>
+          <h2 class="section-title">Not Just an App — A Modular Edge SDK</h2>
+          <p class="section-desc">
+            Many hackathon entries build either a standalone front-end mockup or an offline simulation script. Continuum IDR provides an industrial three-tier ecosystem where the core estimation logic is encapsulated in a reusable engine.
+          </p>
+
+          <div class="bento-grid">
+            <div class="card">
+              <div class="card-icon" style="background-color: var(--accent-primary-subtle); color: var(--accent-primary);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+              </div>
+              <h3 class="card-title">1. Reusable Core SDK</h3>
+              <p class="card-text">
+                Importable Python library (<code>continuum_idr</code>) and zero-dependency Kotlin engine (<code>PortableTreeRunner.kt</code>). Encapsulates dynamic attitude leveling, 42-feature causal ML extraction, WGS-84 Flat-Earth kinematics, and road snapping.
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="card-icon" style="background-color: var(--accent-emerald-subtle); color: var(--accent-emerald);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                </svg>
+              </div>
+              <h3 class="card-title">2. Android Reference App</h3>
+              <p class="card-text">
+                Native Kotlin application with a foreground service sensor listener (100 Hz &rarr; 10 Hz), offline vector map renderer, peer-to-peer V2V BLE hazard beacons, and OS-level Mock GPS provider injection into <code>LocationManager</code>.
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="card-icon" style="background-color: var(--accent-purple-subtle); color: var(--accent-purple);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+              </div>
+              <h3 class="card-title">3. Continuum Studio</h3>
+              <p class="card-text">
+                High-throughput research simulation cockpit pairing a React 18 frontend with a local FastAPI daemon. Supports live GPS kill-switch testing, stochastic sensor noise injection, and real-time Recharts telemetry graphs.
+              </p>
+            </div>
+          </div>
+
+          <!-- Architecture Pipeline Diagram -->
+          <div class="card" style="margin-top: 1.5rem;">
+            <h3 class="card-title" style="margin-bottom: 1.25rem;">Complete 5-Stage Data Transmission Pipeline</h3>
+            <div class="pipeline-container">
+              <!-- Stage 1 -->
+              <div class="pipeline-step">
+                <div class="pipeline-step-badge">1</div>
+                <div class="pipeline-step-content">
+                  <div class="pipeline-step-header">
+                    <h4 class="pipeline-step-title">Raw Phone IMU Ingestion &amp; Dynamic Leveling</h4>
+                    <span class="pipeline-step-tag">100 Hz &rarr; 10 Hz Decimation</span>
+                  </div>
+                  <p class="pipeline-step-desc">
+                    Polls smartphone 6-DoF accelerometer and gyroscope via background HandlerThread. Decimates to a clean 10 Hz buffer. Exponential low-pass filter isolates the 9.81 m/s&sup2; gravity vector from vehicle acceleration; auto-recalibrates if cradle shifts &Delta;&psi; &gt; 15&deg;.
+                  </p>
+                  <div class="pipeline-step-details">
+                    <span class="pipeline-detail-chip">Filter: <b>g</b><sub>k</sub> = 0.98 <b>g</b><sub>k&minus;1</sub> + 0.02 <b>a</b><sub>raw,k</sub></span>
+                    <span class="pipeline-detail-chip">Cutoff: f<sub>c</sub> &approx; 0.32 Hz</span>
+                    <span class="pipeline-detail-chip">Mount Shift Guard: &Delta;&psi; &gt; 15&deg;</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pipeline-connector">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+              </div>
+
+              <!-- Stage 2 -->
+              <div class="pipeline-step">
+                <div class="pipeline-step-badge">2</div>
+                <div class="pipeline-step-content">
+                  <div class="pipeline-step-header">
+                    <h4 class="pipeline-step-title">Causal Feature Extraction</h4>
+                    <span class="pipeline-step-tag">2.0s Sliding Window Buffer</span>
+                  </div>
+                  <p class="pipeline-step-desc">
+                    Computes 42 statistical moments across 6 channels (<i>a</i><sub>x</sub>, <i>a</i><sub>y</sub>, <i>a</i><sub>z</sub>, <i>&omega;</i><sub>x</sub>, <i>&omega;</i><sub>y</sub>, <i>&omega;</i><sub>z</sub>) over 20 causal samples. Eliminates high-frequency vibration noise while capturing braking and acceleration onset.
+                  </p>
+                  <div class="pipeline-step-details">
+                    <span class="pipeline-detail-chip">Moments: Mean, Std, Min, Max, Last, Delta, Root-Energy</span>
+                    <span class="pipeline-detail-chip">Output: FloatArray(42)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pipeline-connector">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+              </div>
+
+              <!-- Stage 3 -->
+              <div class="pipeline-step">
+                <div class="pipeline-step-badge">3</div>
+                <div class="pipeline-step-content">
+                  <div class="pipeline-step-header">
+                    <h4 class="pipeline-step-title">Dual Edge Machine Learning Inference</h4>
+                    <span class="pipeline-step-tag">85&ndash;140 &micro;s &bull; &lt;4.5 MB RAM</span>
+                  </div>
+                  <p class="pipeline-step-desc">
+                    Zero-dependency Kotlin tree runner (<code>PortableTreeRunner.kt</code>). Speed regressor estimates velocity (0&ndash;55 m/s); stop detector evaluates P(stopped) to activate Zero-Velocity Updates (ZUPT) and clamp speed to 0.0 m/s when stopped.
+                  </p>
+                  <div class="pipeline-step-details">
+                    <span class="pipeline-detail-chip">Speed: HistGradientBoosting (50&ndash;100 trees)</span>
+                    <span class="pipeline-detail-chip">Stop Gate: Logistic Regression (P &ge; 0.50 &rarr; 0.0 m/s)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pipeline-connector">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+              </div>
+
+              <!-- Stage 4 -->
+              <div class="pipeline-step">
+                <div class="pipeline-step-badge">4</div>
+                <div class="pipeline-step-content">
+                  <div class="pipeline-step-header">
+                    <h4 class="pipeline-step-title">Kinematics, Lean Decoupling &amp; Road Snapping</h4>
+                    <span class="pipeline-step-tag">WGS-84 Flat-Earth</span>
+                  </div>
+                  <p class="pipeline-step-desc">
+                    Integrates gyro heading with two-wheeler roll-lean angle decoupling. Projects coordinates onto local tangent plane. Soft centerline pull (85% IMU / 15% road) eliminates lateral wander; broadcasts 18-byte ad-hoc BLE hazard alerts.
+                  </p>
+                  <div class="pipeline-step-details">
+                    <span class="pipeline-detail-chip">Lean Decoupling: &theta;<sub>lean</sub> = arctan(v&middot;&omega; / g)</span>
+                    <span class="pipeline-detail-chip">Map Pull: 85% Inertial / 15% Road</span>
+                    <span class="pipeline-detail-chip">V2V: 18-Byte BLE Mesh</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pipeline-connector">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+              </div>
+
+              <!-- Stage 5 -->
+              <div class="pipeline-step">
+                <div class="pipeline-step-badge">5</div>
+                <div class="pipeline-step-content">
+                  <div class="pipeline-step-header">
+                    <h4 class="pipeline-step-title">Android OS Relay &amp; Smooth Re-Convergence</h4>
+                    <span class="pipeline-step-tag">LocationManager Hook</span>
+                  </div>
+                  <p class="pipeline-step-desc">
+                    <code>SystemMockRelay.kt</code> injects synthetic coordinates into Android's <code>GPS_PROVIDER</code>, powering unmodified Google Maps continuously during blackouts. On tunnel exit, a 2.5s linear blending window prevents visual jumping.
+                  </p>
+                  <div class="pipeline-step-details">
+                    <span class="pipeline-detail-chip">Consumer Apps: Google Maps, Waze, Uber</span>
+                    <span class="pipeline-detail-chip">Recovery: <b>p</b><sub>blend</sub> = (1 &minus; &alpha;)<b>p</b><sub>idr</sub> + &alpha;<b>p</b><sub>gnss</sub> (2.5s)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: Sensors & Kinematics -->
+        <section id="sensors-kinematics" class="doc-section">
+          <div class="section-tag">Mathematics & Physics</div>
+          <h2 class="section-title">Sensors, Gravity Leveling & Heading Kinematics</h2>
+          <p class="section-desc">
+            Consumer smartphones mounted in automotive cradles or two-wheeler handlebars are subjected to unknown static tilt angles, suspension pitch/roll, and severe road vibration. Continuum isolates the vehicle coordinate frame dynamically.
+          </p>
+
+          <div class="formula-card">
+            <div class="formula-title">1. Dynamic Exponential Gravity Leveling Filter</div>
+            <div class="formula-line">
+              <b>g</b><sub>k</sub> = 0.98 <b>g</b><sub>k&minus;1</sub> + 0.02 <b>a</b><sub>raw, k</sub>
+              &nbsp;&nbsp;<span class="formula-note">(f<sub>c</sub> &approx; 0.32 Hz)</span>
+            </div>
+            <div class="formula-line">
+              <b>a</b><sub>linear, k</sub> = <b>a</b><sub>raw, k</sub> &minus; <b>g</b><sub>k</sub>
+            </div>
+          </div>
+          <p class="text-xs text-ink-secondary" style="margin-bottom: 1rem;">
+            This isolates the constant 9.81 m/s&sup2; downward gravity vector from true vehicle acceleration. If a bump or phone nudge causes tilt deviation &Delta;&psi; &gt; 15&deg;, an alignment supervisor automatically re-calibrates the vehicle forward axis.
+          </p>
+
+          <div class="formula-card">
+            <div class="formula-title">2. Heading Integration &amp; Two-Wheeler Lean Decoupling</div>
+            <div class="formula-line">
+              &theta;<sub>k</sub> = (&theta;<sub>k&minus;1</sub> + &omega;<sub>z,true</sub> &middot; &Delta;t) mod 360&deg;
+            </div>
+            <div class="formula-line">
+              &theta;<sub>lean</sub> = arctan((v &middot; &omega;<sub>z</sub>) / g) &nbsp;&nbsp;&implies;&nbsp;&nbsp; &omega;<sub>z,true</sub> = &omega;<sub>z</sub> &middot; cos(&theta;<sub>lean</sub>)
+            </div>
+          </div>
+          <p class="text-xs text-ink-secondary" style="margin-bottom: 1rem;">
+            On motorcycles and scooters, cornering produces roll-lean angles up to 35&deg;. Without lean decoupling, the phone's gyroscope registers massive false heading distortion. The cosine projection normalizes angular velocity onto the true vertical yaw axis.
+          </p>
+
+          <div class="formula-card">
+            <div class="formula-title">3. Planar WGS-84 Flat-Earth Projection</div>
+            <div class="formula-line">
+              &Delta;N = v &middot; &Delta;t &middot; cos(&theta;) , &nbsp;&nbsp;&nbsp;&Delta;E = v &middot; &Delta;t &middot; sin(&theta;)
+            </div>
+            <div class="formula-line">
+              lat<sub>k</sub> = lat<sub>k&minus;1</sub> + &Delta;N / R<sub>E</sub> , &nbsp;&nbsp;&nbsp;lon<sub>k</sub> = lon<sub>k&minus;1</sub> + &Delta;E / (R<sub>E</sub> &middot; cos(lat<sub>k&minus;1</sub>))
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: State Machine Lifecycle -->
+        <section id="state-machine" class="doc-section">
+          <div class="section-tag">Robustness & Supervision</div>
+          <h2 class="section-title">Engine State Machine Lifecycle</h2>
+          <p class="section-desc">
+            To prevent false triggering from momentary satellite occlusion under tree canopies while responding instantly to tunnel blackouts, Continuum IDR operates a deterministic finite state machine.
+          </p>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>State Name</th>
+                  <th>Condition & Trigger</th>
+                  <th>Internal Action</th>
+                  <th>Google Maps Feed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge badge-amber">WAITING_FOR_FIX</span></td>
+                  <td>App launch; no satellite lock</td>
+                  <td>Collects IMU, calibrates cradle tilt</td>
+                  <td>Passes native OS hardware stream</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-green">GNSS_HEALTHY</span></td>
+                  <td>Valid GNSS fixes arriving (&Delta;t &le; 1.0s)</td>
+                  <td>Updates online gyro bias, trains scale</td>
+                  <td>Passes authentic satellite fixes</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-amber">OUTAGE_PENDING</span></td>
+                  <td>Satellite fix delayed (1.0s &lt; &Delta;t &le; 2.0s)</td>
+                  <td>Warps last known state, prepares dead reckoning</td>
+                  <td>Holds last valid position</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-blue">FALLBACK_ACTIVE</span></td>
+                  <td>Fixes absent for &Delta;t &gt; 2.0s (Tunnel entry)</td>
+                  <td>Dual ML speed + gyro heading + road snapping</td>
+                  <td>Injects 10 Hz synthetic dead-reckoned GPS</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-purple">RECOVERING</span></td>
+                  <td>First valid satellite fix returns upon exit</td>
+                  <td>Applies 2.5s linear blending filter</td>
+                  <td>Glides puck smoothly onto live GPS track</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Section: Dual Edge ML Pipeline -->
+        <section id="feature-extraction" class="doc-section">
+          <div class="section-tag">Edge Machine Learning</div>
+          <h2 class="section-title">Causal 42-Moment Statistical Extractor</h2>
+          <p class="section-desc">
+            Rather than feeding raw, noisy sensor streams into heavy neural networks that drain mobile batteries, Continuum IDR extracts 42 statistical moments across a causal 2.0-second sliding buffer (20 samples per channel at 10 Hz).
+          </p>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Feature Indices</th>
+                  <th>Sensor Channel</th>
+                  <th>Statistical Moments Computed (7 per Channel)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>00 – 06</code></td>
+                  <td>Linear Accel <i>a</i><sub>x</sub></td>
+                  <td>Mean, Std, Min, Max, Last, Delta (x<sub>last</sub> &minus; x<sub>first</sub>), Root-Energy</td>
+                </tr>
+                <tr>
+                  <td><code>07 – 13</code></td>
+                  <td>Linear Accel <i>a</i><sub>y</sub></td>
+                  <td>Mean, Std, Min, Max, Last, Delta (x<sub>last</sub> &minus; x<sub>first</sub>), Root-Energy</td>
+                </tr>
+                <tr>
+                  <td><code>14 – 20</code></td>
+                  <td>Linear Accel <i>a</i><sub>z</sub></td>
+                  <td>Mean, Std, Min, Max, Last, Delta (x<sub>last</sub> &minus; x<sub>first</sub>), Root-Energy</td>
+                </tr>
+                <tr>
+                  <td><code>21 – 27</code></td>
+                  <td>Gyroscope <i>&omega;</i><sub>x</sub></td>
+                  <td>Mean, Std, Min, Max, Last, Delta (x<sub>last</sub> &minus; x<sub>first</sub>), Root-Energy</td>
+                </tr>
+                <tr>
+                  <td><code>28 – 34</code></td>
+                  <td>Gyroscope <i>&omega;</i><sub>y</sub></td>
+                  <td>Mean, Std, Min, Max, Last, Delta (x<sub>last</sub> &minus; x<sub>first</sub>), Root-Energy</td>
+                </tr>
+                <tr>
+                  <td><code>35 – 41</code></td>
+                  <td>Gyroscope <i>&omega;</i><sub>z</sub></td>
+                  <td>Mean, Std, Min, Max, Last, Delta (x<sub>last</sub> &minus; x<sub>first</sub>), Root-Energy</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="text-xs text-ink-secondary">
+            <strong>Physical Meaning:</strong> <em>Mean</em> captures forward thrust or braking; <em>Std</em> reflects suspension vibration and road surface; <em>Min/Max</em> isolate potholes; <em>Root-Energy</em> (&radic;(1/N &sum; x&sup2;)) separates engine idling from high-speed cruising.
+          </p>
+        </section>
+
+        <!-- Section: Speed Regressor & ZUPT Classifier -->
+        <section id="speed-regressor" class="doc-section">
+          <div class="section-tag">Machine Learning Models</div>
+          <h2 class="section-title">Speed Regressor & Stop Detector (ZUPT)</h2>
+          <p class="section-desc">
+            Longitudinal velocity cannot be cleanly double-integrated from consumer accelerometers due to bias buildup. Continuum IDR employs a dual-model architecture:
+          </p>
+
+          <div class="bento-grid">
+            <div class="card">
+              <span class="badge badge-blue">Model 1: Forward Velocity</span>
+              <h3 class="card-title" style="margin-top: 0.5rem;">HistGradientBoosting Regressor</h3>
+              <p class="card-text">
+                Ensemble of 50–100 histogram-quantized decision trees (31 leaves max). Takes the 42-feature array and estimates forward vehicle speed from 0 to 55 m/s (0–200 km/h) with shrinkage rate &eta; = 0.1.
+              </p>
+            </div>
+
+            <div class="card" id="stop-classifier">
+              <span class="badge badge-amber">Model 2: Stop Classifier</span>
+              <h3 class="card-title" style="margin-top: 0.5rem;">Logistic Regression Stop Detector</h3>
+              <p class="card-text">
+                Computes stop probability <i>P</i>(stopped). When <i>P</i> &ge; 0.50, velocity is clamped to exactly <strong>0.0 m/s</strong>. This activates <strong>Zero-Velocity Updates (ZUPT)</strong>, preventing the navigation arrow from creeping forward while waiting at traffic lights.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: Portable Kotlin Runtime -->
+        <section id="portable-engine" class="doc-section">
+          <div class="section-tag">Mobile Edge Execution</div>
+          <h2 class="section-title">Zero-Dependency Kotlin Runtime (PortableTreeRunner)</h2>
+          <p class="section-desc">
+            Rather than packing massive 30 MB runtimes like TensorFlow Lite or ONNX Runtime into an Android app, Continuum IDR exports trained trees into a compact JSON schema (<code>motion_portable.json</code>) parsed by <code>PortableTreeRunner.kt</code>.
+          </p>
+
+          <div class="code-box">
+            <div class="code-header">
+              <span class="lang">JSON</span>
+              <span>motion_portable.json (Schema Excerpt)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <div class="code-content"><pre><code>{
+  "manifest": {
+    "version": "1.0.0",
+    "model_id": "continuum-motion-p0",
+    "uncertainty_bins_mps": [0.0, 5.0, 15.0, 25.0],
+    "uncertainty_std_mps": [0.35, 0.65, 1.10, 1.85]
+  },
+  "speed_mean": 12.435,
+  "stop_linear_intercept": -0.852,
+  "stop_linear_weights": [-0.12, 0.45, -0.08, ...],
+  "speed_trees": [
+    [
+      {"f": 1, "th": 0.452, "l": 1, "r": 2},
+      {"v": -1.24},
+      {"f": 27, "th": -0.012, "l": 3, "r": 4},
+      {"v": 0.85},
+      {"v": 2.15}
+    ]
+  ]
+}</code></pre></div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Benchmark Metric</th>
+                  <th>Measured Performance</th>
+                  <th>Architectural Significance</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Cold Startup Time</strong></td>
+                  <td><strong>&lt; 25 ms</strong></td>
+                  <td>Instant readiness upon Android application launch</td>
+                </tr>
+                <tr>
+                  <td><strong>Per-Step Inference Latency</strong></td>
+                  <td><strong>85 – 140 µs (0.00014s)</strong></td>
+                  <td>Uses &lt;0.2% of the 100 ms frame budget at 10 Hz</td>
+                </tr>
+                <tr>
+                  <td><strong>Heap Memory Usage</strong></td>
+                  <td><strong>&lt; 4.5 MB RAM</strong></td>
+                  <td>Zero garbage collector pressure or battery drain</td>
+                </tr>
+                <tr>
+                  <td><strong>Mathematical Parity</strong></td>
+                  <td><strong>|v&#770;<sub>Py</sub> &minus; v&#770;<sub>Kt</sub>| &lt; 10<sup>&minus;5</sup> m/s</strong></td>
+                  <td>Guaranteed float equivalence with Python scikit-learn</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Section: OS Mock GPS Relay & Google Maps -->
+        <section id="mock-relay" class="doc-section">
+          <div class="section-tag">OS System Integration</div>
+          <h2 class="section-title">Android System Mock GPS Relay: Powers Google Maps</h2>
+          <p class="section-desc">
+            Continuum IDR does not force drivers to use an unfamiliar, stripped-down custom navigation interface. Instead, it hooks directly into Android’s <code>LocationManager.GPS_PROVIDER</code> using the system test provider API.
+          </p>
+
+          <div class="callout callout-success">
+            <div class="callout-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <span>Zero App Code Changes Required</span>
+            </div>
+            <p>
+              Official, unmodified <strong>Google Maps, Waze, and Uber</strong> downloaded straight from the Google Play Store listen to Android OS’s native GPS stream. When satellite lock drops, Continuum IDR injects dead-reckoned fixes into the OS pipe—the blue navigation puck continues driving seamlessly!
+            </p>
+          </div>
+
+          <!-- Reconvergence Equation -->
+          <div class="formula-card" id="reconvergence">
+            <div class="formula-title">Smooth 2.5-Second Linear Re-Convergence Filter</div>
+            <div class="formula-line">
+              <b>p</b><sub>blend</sub>(t) = (1 &minus; &alpha;(t)) <b>p</b><sub>idr</sub>(t) + &alpha;(t) <b>p</b><sub>gnss</sub>(t)
+              &nbsp;&nbsp;<span class="formula-note">&alpha;(t) = (t &minus; t<sub>exit</sub>) / 2.5s</span>
+            </div>
+          </div>
+          <p class="text-xs text-ink-secondary">
+            <strong>Why this matters:</strong> If an accumulated 15-meter error exists upon tunnel exit, snapping instantly to satellite fixes causes Google Maps to panic and announce false turn recalculations. The 2.5s blending window glides the puck smoothly back onto the real GPS track.
+          </p>
+        </section>
+
+        <!-- Section: Topological Road Snapping -->
+        <section id="road-snapping" class="doc-section">
+          <div class="section-tag">Offline Road Graph</div>
+          <h2 class="section-title">Topological Road Snapping with Spatial Hashing</h2>
+          <p class="section-desc">
+            Pure inertial tracking accumulates gyroscope drift over time. Continuum IDR constrains dead reckoning to the physical road network using an offline vector graph (<code>sample_road_pack.json</code>) indexed via a 2D spatial hash grid (50 m cell size).
+          </p>
+
+          <div class="formula-card">
+            <div class="formula-title">Soft Centerline Pull &amp; Heading Damping (Confidence &ge; 70%)</div>
+            <div class="formula-line">
+              <b>p</b><sub>corrected</sub> = 0.85 <b>p</b><sub>inertial</sub> + 0.15 <b>p</b><sub>centerline</sub>
+            </div>
+            <div class="formula-line">
+              &theta;<sub>corrected</sub> = 0.96 &theta;<sub>gyro</sub> + 0.04 &theta;<sub>road</sub>
+            </div>
+          </div>
+          <p class="text-xs text-ink-secondary">
+            <strong>Multi-Hypothesis Tracking:</strong> Unlike naive snapping that forces coordinates onto the nearest road segment, Continuum preserves branching hypotheses at flyover ramps and parallel service roads until motion disambiguates the true route.
+          </p>
+        </section>
+
+        <!-- Section: Indian Road Dynamics & Two-Wheeler -->
+        <section id="indian-roads" class="doc-section">
+          <div class="section-tag">Indian Road Physics</div>
+          <h2 class="section-title">Pothole Shock Rejection & Two-Wheeler Lean Decoupling</h2>
+          <p class="section-desc">
+            Indian driving conditions feature severe road roughness, unmarked speed breakers, potholes, high-density traffic congestion, and two-wheelers with pronounced cornering roll angles.
+          </p>
+
+          <div class="bento-grid">
+            <div class="card">
+              <span class="badge badge-amber">Shock Anomaly Classifier</span>
+              <h3 class="card-title" style="margin-top: 0.5rem;">Potholes & Speed Breakers</h3>
+              <p class="card-text">
+                Evaluates vertical jerk: sharp negative drops (<i>a</i><sub>z</sub> &lt; &minus;4.0 m/s&sup2;) indicate <strong>POTHOLES</strong>, while positive spikes (<i>a</i><sub>z</sub> &gt; +4.5 m/s&sup2;) followed by rebound indicate <strong>SPEED BREAKERS</strong>. These vertical shocks are prevented from corrupting longitudinal forward speed.
+              </p>
+            </div>
+
+            <div class="card" id="two-wheeler">
+              <span class="badge badge-blue">Two-Wheeler Dynamics</span>
+              <h3 class="card-title" style="margin-top: 0.5rem;">Motorcycles & Auto-Rickshaws</h3>
+              <p class="card-text">
+                Filters single-cylinder engine rumble (20–40 Hz) and decouples cornering roll lean (&theta; = arctan(v&middot;&omega; / g)). Validated for two-wheeler handlebar cradles and rider pockets across diverse Indian urban scenarios.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: V2V Decentralized BLE Mesh -->
+        <section id="v2v-mesh" class="doc-section">
+          <div class="section-tag">Decentralized Mesh</div>
+          <h2 class="section-title">Peer-to-Peer 18-Byte V2V BLE Hazard Mesh</h2>
+          <p class="section-desc">
+            When a vehicle encounters a deep pothole, speed bump, or sudden GPS blackout inside a tunnel, it alerts trailing vehicles instantly using Bluetooth Low Energy (BLE 5.0) advertising packets—<strong>completely offline without cellular data</strong>.
+          </p>
+
+          <div class="code-box">
+            <div class="code-header">
+              <span class="lang">BINARY</span>
+              <span>18-Byte Non-Connectable Ad-Hoc Payload Structure</span>
+            </div>
+            <div class="code-content"><pre><code>[Byte 0-1]:   Magic Header (0xCA 0xFE)
+[Byte 2-5]:   Epoch Timestamp (uint32)
+[Byte 6-9]:   Latitude Coordinate (int32, scaled x 10^7)
+[Byte 10-13]: Longitude Coordinate (int32, scaled x 10^7)
+[Byte 14]:    Anomaly Type (0x01: Pothole, 0x02: Speed Breaker, 0x03: GPS Blackout)
+[Byte 15]:    Severity Metric (0–255)
+[Byte 16-17]: 16-Bit CRC Checksum</code></pre></div>
+          </div>
+          <p class="text-xs text-ink-secondary">
+            Packets broadcast over 10–30 meters line-of-sight. Receiving devices maintain a 30-second in-memory spatial deduplication table to eliminate notification spam.
+          </p>
+        </section>
+
+        <!-- Section: Dataset & Evaluation -->
+        <section id="dataset" class="doc-section">
+          <div class="section-tag">Scientific Evaluation</div>
+          <h2 class="section-title">IO-VNBD Dataset Evaluation & Held-Out Benchmarks</h2>
+          <p class="section-desc">
+            Trained and evaluated on the published <strong>IO-VNBD</strong> (Categorised IOVNB Dataset) multi-driver smartphone and vehicle dataset. To prevent synthetic data leakage, the entire <code>Vtb*</code> family (Driver E, 11 trajectories, 34 outage episodes) was held out strictly for testing.
+          </p>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Median Endpoint Error</th>
+                  <th>Drift % of Traveled Distance</th>
+                  <th>Relative Improvement</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>B0: Frozen GPS Hold (Baseline)</strong></td>
+                  <td>496.9 meters</td>
+                  <td>100.0%</td>
+                  <td>Baseline (Current Google Maps behavior)</td>
+                </tr>
+                <tr>
+                  <td><strong>B1: Last Speed + Gyro Heading</strong></td>
+                  <td>334.4 meters</td>
+                  <td>76.2%</td>
+                  <td>32.7% reduction</td>
+                </tr>
+                <tr>
+                  <td><strong>Continuum IDR (Dual ML + IMU)</strong></td>
+                  <td><strong>354.3 meters</strong></td>
+                  <td><strong>80.3%</strong></td>
+                  <td><strong>28.7% reduction over Frozen GPS</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout-warning">
+            <div class="callout-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Scientific Integrity & Ground Truth Honesty</span>
+            </div>
+            <p>
+              Consumer phone MEMS gyroscopes exhibit thermal bias drift of 0.5&deg; &minus; 2.0&deg;/s. Over long blackout windows (&gt;30 seconds), pure inertial dead reckoning without map constraints misses the &lt;10% drift target. This empirical finding is why our offline topological road snapping and ZUPT stop gating were engineered into the SDK.
+            </p>
+          </div>
+        </section>
+
+        <!-- Section: Graphical Analysis (All 7 Images) -->
+        <section id="graphs-showcase" class="doc-section">
+          <div class="section-tag">Visual Telemetry & Plots</div>
+          <h2 class="section-title">Empirical Benchmark Graphs & Technical Analysis</h2>
+          <p class="section-desc">
+            Generated directly from held-out IO-VNBD evaluation runs (Driver E, Route <code>Vtb01</code>). Click any plot to zoom into high-resolution view.
+          </p>
+
+          <!-- Graph 1: Trajectory -->
+          <div class="graph-card" id="graph-trajectory">
+            <div class="graph-media-container">
+              <img src="assets/images/trajectory.png" alt="Trajectory line plot comparing ground truth, frozen baseline, and Continuum IDR dead reckoning" class="graph-img">
+              <div class="graph-zoom-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Click to Zoom</span>
+              </div>
+            </div>
+            <div class="graph-details">
+              <h3 class="graph-title">1. Planar Trajectory Reconstruction</h3>
+              <p class="graph-desc">
+                Shows vehicle path in local metric coordinates (E, N in meters). The red marker indicates where standard Google Maps freezes at tunnel entry. The blue curve illustrates Continuum IDR continuously dead-reckoning along the road corridor, closely tracking the gray ground-truth reference trajectory.
+              </p>
+              <div class="graph-chips">
+                <span class="graph-chip">X-Axis: East (m)</span>
+                <span class="graph-chip">Y-Axis: North (m)</span>
+                <span class="graph-chip">Run: Vtb01 (Held-out)</span>
+                <span class="graph-chip">Outage Window: 60 seconds</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graph 2: Error vs Time -->
+          <div class="graph-card" id="graph-error">
+            <div class="graph-media-container">
+              <img src="assets/images/error_vs_time.png" alt="Error vs time plot showing horizontal error accumulation" class="graph-img">
+              <div class="graph-zoom-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Click to Zoom</span>
+              </div>
+            </div>
+            <div class="graph-details">
+              <h3 class="graph-title">2. Horizontal Error vs. Outage Duration</h3>
+              <p class="graph-desc">
+                Tracks horizontal deviation (meters) from ground truth as outage duration progresses from 0 to 60 seconds. While the frozen baseline (red) climbs linearly to 500+ meters, Continuum IDR (blue) constrains displacement error growth via learned longitudinal speed and ZUPT stop gating.
+              </p>
+              <div class="graph-chips">
+                <span class="graph-chip">X-Axis: Outage Duration (s)</span>
+                <span class="graph-chip">Y-Axis: Horizontal Error (m)</span>
+                <span class="graph-chip">Metric: Absolute Euclidean Distance</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graph 3: Speed Profile -->
+          <div class="graph-card" id="graph-speed">
+            <div class="graph-media-container">
+              <img src="assets/images/speed_profile.png" alt="Speed profile comparing ML estimated velocity with ground truth" class="graph-img">
+              <div class="graph-zoom-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Click to Zoom</span>
+              </div>
+            </div>
+            <div class="graph-details">
+              <h3 class="graph-title">3. Longitudinal Speed Profile Tracking</h3>
+              <p class="graph-desc">
+                Compares the <code>HistGradientBoosting</code> ML speed prediction against true vehicle speed. The regressor accurately captures acceleration ramps, steady-state high-speed cruising (15–20 m/s), and decelerations without direct wheel odometry.
+              </p>
+              <div class="graph-chips">
+                <span class="graph-chip">X-Axis: Time Elapsed (s)</span>
+                <span class="graph-chip">Y-Axis: Velocity (m/s)</span>
+                <span class="graph-chip">Model: HistGradientBoostingRegressor</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graph 4: Heading and Yaw -->
+          <div class="graph-card" id="graph-yaw">
+            <div class="graph-media-container">
+              <img src="assets/images/heading_and_yaw.png" alt="Heading and yaw integration tracking" class="graph-img">
+              <div class="graph-zoom-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Click to Zoom</span>
+              </div>
+            </div>
+            <div class="graph-details">
+              <h3 class="graph-title">4. Heading Integration & Yaw Rate Dynamics</h3>
+              <p class="graph-desc">
+                Shows clockwise compass heading (degrees) integrated from gyro <i>&omega;</i><sub>z</sub>. Demonstrates clean tracking through 90&deg; road turns and highway curved ramps, confirming proper heading unwrapping across the 0&deg; / 360&deg; boundary.
+              </p>
+              <div class="graph-chips">
+                <span class="graph-chip">X-Axis: Time (s)</span>
+                <span class="graph-chip">Y-Axis: Heading (Degrees)</span>
+                <span class="graph-chip">Filter: Monotonic Yaw Integration</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graph 5: Map Snapping -->
+          <div class="graph-card" id="graph-snapping">
+            <div class="graph-media-container">
+              <img src="assets/images/map_matching_snapping.png" alt="Map matching and road snapping vectors" class="graph-img">
+              <div class="graph-zoom-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Click to Zoom</span>
+              </div>
+            </div>
+            <div class="graph-details">
+              <h3 class="graph-title">5. Topological Map Matching & Centerline Soft-Pull</h3>
+              <p class="graph-desc">
+                Illustrates how raw unconstrained inertial dead reckoning (which gradually drifts laterally) is softly bound to the road vector graph (85% inertial / 15% centerline pull), eliminating cross-track lateral drift while preventing false locks at highway splits.
+              </p>
+              <div class="graph-chips">
+                <span class="graph-chip">Graph Pack: sample_road_pack.json</span>
+                <span class="graph-chip">Index: Spatial Hash 50m</span>
+                <span class="graph-chip">Pull Ratio: 0.85 / 0.15</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graph 6: IMU Shocks -->
+          <div class="graph-card" id="graph-shocks">
+            <div class="graph-media-container">
+              <img src="assets/images/surface_shocks_and_imu.png" alt="IMU vertical shock spikes and surface anomaly classification" class="graph-img">
+              <div class="graph-zoom-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Click to Zoom</span>
+              </div>
+            </div>
+            <div class="graph-details">
+              <h3 class="graph-title">6. Road Surface Anomaly Classification & IMU Shocks</h3>
+              <p class="graph-desc">
+                Plots vertical acceleration (<i>a</i><sub>z</sub>). High-frequency shock impulses exceeding &plusmn;4.5 m/s&sup2; correspond to physical speed breakers and potholes, which the surface anomaly detector flags while shielding the longitudinal velocity estimator from false braking signals.
+              </p>
+              <div class="graph-chips">
+                <span class="graph-chip">Channel: Linear Accel Z (m/s²)</span>
+                <span class="graph-chip">Thresholds: -4.0 m/s² / +4.5 m/s²</span>
+                <span class="graph-chip">Flag: SPEED_BREAKER / POTHOLE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graph 7: Benchmark Distributions -->
+          <div class="graph-card" id="graph-distributions">
+            <div class="graph-media-container">
+              <img src="assets/images/benchmark_distributions.png" alt="Benchmark error distribution across all held-out outage episodes" class="graph-img">
+              <div class="graph-zoom-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Click to Zoom</span>
+              </div>
+            </div>
+            <div class="graph-details">
+              <h3 class="graph-title">7. Aggregate Benchmark Error Distribution</h3>
+              <p class="graph-desc">
+                Statistical distribution across all 34 held-out outage episodes in the IO-VNBD test set. Demonstrates consistent error compression over the baseline, verifying repeatable dead-reckoning performance across varied road segments.
+              </p>
+              <div class="graph-chips">
+                <span class="graph-chip">Dataset: IO-VNBD Driver E</span>
+                <span class="graph-chip">Sample Count: 34 Outages</span>
+                <span class="graph-chip">Median: 354.3 m vs 496.9 m</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: Video Demonstrations -->
+        <section id="videos" class="doc-section">
+          <div class="section-tag">Video Demonstrations</div>
+          <h2 class="section-title">Live Screen Recordings & Demonstrations</h2>
+          <p class="section-desc">
+            Watch real screen recordings of the Continuum Studio desktop simulation cockpit and the Android reference app operating in real time.
+          </p>
+
+          <div class="video-grid">
+            <!-- Video 1: Desktop Studio Dashboard -->
+            <div class="video-card">
+              <div class="video-player-wrapper">
+                <video controls preload="metadata" poster="assets/images/trajectory.png">
+                  <source src="assets/videos/dashboard_recording.mp4" type="video/mp4">
+                  Your browser does not support HTML5 video.
+                </video>
+              </div>
+              <div class="video-info">
+                <h3 class="video-title">1. Desktop Telemetry Cockpit (Continuum Studio)</h3>
+                <p class="video-desc">
+                  Live demonstration of the React 18 + FastAPI desktop simulator. Shows real-time Leaflet vector map plotting, triggering the interactive <strong>"Trigger Satellite Outage"</strong> kill-switch, observing dead-reckoning fallback, and viewing real-time Recharts telemetry curves.
+                </p>
+                <div class="video-meta">
+                  <span>File: <code>Dashboard Screen rec.mp4</code></span>
+                  <span>Duration: ~1m 30s • 1080p</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Video 2: Android Mobile App -->
+            <div class="video-card">
+              <div class="video-player-wrapper">
+                <video controls preload="metadata" poster="assets/images/surface_shocks_and_imu.png">
+                  <source src="assets/videos/mobile_recording.mp4" type="video/mp4">
+                  <source src="assets/videos/mobile_recording.mp4" type="video/quicktime">
+                  Your browser does not support HTML5 video.
+                </video>
+              </div>
+              <div class="video-info">
+                <h3 class="video-title">2. Android Reference App & Mock Location Relay</h3>
+                <p class="video-desc">
+                  Screen recording from a physical Android device running Continuum IDR. Demonstrates the live automotive HUD, real-time sensor decimation (100 Hz &rarr; 10 Hz), the one-tap <strong>"ENABLE MOCK GPS"</strong> toggle, and background foreground service operation.
+                </p>
+                <div class="video-meta">
+                  <span>File: <code>mobile screen rec.mp4</code></span>
+                  <span>Duration: ~12s • 1080p</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: Developer APIs & SDK Reference -->
+        <section id="api" class="doc-section">
+          <div class="section-tag">Developer APIs</div>
+          <h2 class="section-title">Developer APIs & CLI Tooling</h2>
+          <p class="section-desc">
+            Continuum IDR is designed for modular integration into fleet telematics, automotive in-dash infotainment, and smartphone applications.
+          </p>
+
+          <!-- Python SDK Code Box -->
+          <div class="code-box">
+            <div class="code-header">
+              <span class="lang">PYTHON</span>
+              <span>Python Research Engine Integration</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <div class="code-content"><pre><code>from continuum_idr.engine import IDREngine
+from continuum_idr.model import MotionModelBundle
+from continuum_idr.types import EngineConfig, IMUSample, GNSSFix
+
+# 1. Initialize portable model bundle and engine configuration
+model = MotionModelBundle.load("models/motion_p0")
+config = EngineConfig(imu_rate_hz=10.0, gnss_timeout_s=2.0)
+engine = IDREngine(model, config)
+
+# 2. Feed 10 Hz IMU samples from smartphone or vehicle bus
+state = engine.on_imu(IMUSample(
+    timestamp_s=1709234812.105,
+    accel_mps2=(0.12, 0.45, 9.81),
+    gyro_radps=(0.001, 0.002, -0.015)
+))
+
+print(f"Tracking: {state.tracking_mode}, Speed: {state.speed_mps:.2f} m/s, Heading: {state.heading_deg:.1f}°")</code></pre></div>
+          </div>
+
+          <!-- Android Kotlin SDK Box -->
+          <div class="code-box" id="android-sdk">
+            <div class="code-header">
+              <span class="lang">KOTLIN</span>
+              <span>Android Embedded SDK Integration</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <div class="code-content"><pre><code>val continuumEngine = ContinuumLocationEngine(
+    context = this,
+    portableRunner = PortableTreeRunner.fromJsonString(modelJson),
+    vehicleProfile = ContinuumLocationEngine.VehicleProfile.CAR,
+    roadGraphPack = roadPack
+)
+
+continuumEngine.start(object : ContinuumLocationEngine.LocationUpdateCallback {
+    override fun onLocationUpdate(location: Location, isFallback: Boolean, state: FallbackState) {
+        // Feeds Google Maps directly via LocationSource or Mock Location Relay
+        googleMapLocationListener.onLocationChanged(location)
+    }
+    override fun onSurfaceAnomaly(eventType: String, severity: Double) {
+        Log.i("IDR", "Road anomaly detected: $eventType (severity: $severity)")
+    }
+    override fun onMountShiftDetected() {
+        Log.w("IDR", "Phone mount shifted > 15 degrees; dynamic re-leveling triggered")
+    }
+})</code></pre></div>
+          </div>
+
+          <!-- CLI Commands Box -->
+          <div class="code-box" id="quickstart">
+            <div class="code-header">
+              <span class="lang">BASH</span>
+              <span>Command-Line Interface (CLI)</span>
+              <button class="copy-btn">Copy</button>
+            </div>
+            <div class="code-content"><pre><code># 1. Install Continuum IDR in local editable mode
+pip install -e .
+
+# 2. Launch Continuum Studio desktop simulation cockpit on port 8000
+python -m continuum_idr.cli studio --host 127.0.0.1 --port 8000
+
+# 3. Evaluate held-out outage episodes across IO-VNBD dataset
+python -m continuum_idr.cli evaluate --artifacts artifacts/evaluation
+
+# 4. Audit and validate a recorded field trip from a smartphone
+python -m continuum_idr.cli validate-phone-log artifacts/device_validation/trips/trip_01.jsonl</code></pre></div>
+          </div>
+        </section>
+
+        <!-- Section: How to Install Android APK Guide -->
+        <section id="install-guide" class="doc-section">
+          <div class="section-tag">Installation & Deployment</div>
+          <h2 class="section-title">How to Install & Enable Mock Location</h2>
+          <p class="section-desc">
+            Follow these 4 simple steps on any Android smartphone to enable Continuum IDR to power official Google Maps during tunnel blackouts:
+          </p>
+
+          <div class="bento-grid">
+            <div class="card">
+              <span class="badge badge-blue">Step 1</span>
+              <h3 class="card-title" style="margin-top: 0.5rem;">Download & Install APK</h3>
+              <p class="card-text">
+                Tap the <a href="assets/apk/Continuum_IDR_v1.0.apk" download="Continuum_IDR_v1.0.apk" style="color: var(--accent-primary); font-weight: 600;">Download APK button</a> above. Open the downloaded <code>Continuum_IDR_v1.0.apk</code> file on your Android device and confirm installation.
+              </p>
+            </div>
+
+            <div class="card">
+              <span class="badge badge-blue">Step 2</span>
+              <h3 class="card-title" style="margin-top: 0.5rem;">Unlock Developer Options</h3>
+              <p class="card-text">
+                Go to <strong>Settings</strong> &rarr; <strong>About Phone</strong> &rarr; tap <strong>Build Number</strong> 7 times until a toast message appears: <em>"You are now a developer!"</em>
+              </p>
+            </div>
+
+            <div class="card">
+              <span class="badge badge-blue">Step 3</span>
+              <h3 class="card-title" style="margin-top: 0.5rem;">Select Mock Location App</h3>
+              <p class="card-text">
+                Go to <strong>Settings</strong> &rarr; <strong>System</strong> &rarr; <strong>Developer Options</strong> &rarr; scroll to <strong>"Select mock location app"</strong> &rarr; choose <strong>Continuum IDR</strong>.
+              </p>
+            </div>
+
+            <div class="card">
+              <span class="badge badge-green">Step 4</span>
+              <h3 class="card-title" style="margin-top: 0.5rem;">Launch & Drive</h3>
+              <p class="card-text">
+                Open <strong>Continuum IDR</strong>, tap <strong>"ENABLE MOCK GPS"</strong>, then open <strong>Google Maps</strong>. Drive into any tunnel or basement parking garage—navigation continues without interruption!
+              </p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Image Lightbox Modal -->
+  <div class="lightbox-modal" id="lightbox-modal">
+    <div class="lightbox-content">
+      <button class="lightbox-close" id="lightbox-close">&times;</button>
+      <img src="" alt="Enlarged Plot View" id="lightbox-img">
+    </div>
+  </div>
+
+  <!-- Page Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div>
+        <strong>Continuum IDR</strong> — Hardware-Free Edge Dead-Reckoning Navigation SDK & Fallback Platform.
+        <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 0.2rem;">
+          Developed for Smart India Hackathon (SIH 2026) • Problem Statement SIH168.
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 1.5rem;">
+        <a href="#overview" style="color: var(--text-muted); text-decoration: none;">Back to Top ↑</a>
+        <a href="assets/apk/Continuum_IDR_v1.0.apk" download="Continuum_IDR_v1.0.apk" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Download APK</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
